@@ -76,6 +76,7 @@ See~\autoref{tab:sample}, \autoref{fig:sample-drawing}, \autoref{fig:sample-plot
         xlabel=X
       ]
       \addplot table[x=a, y=b]{\exampleA};
+      \addlegendimage{empty legend}
       \addlegendentry{Example A}
       \addplot table[x=a, y=b]{\exampleB};
       \addlegendentry{Example B}
@@ -88,8 +89,17 @@ See~\autoref{tab:sample}, \autoref{fig:sample-drawing}, \autoref{fig:sample-plot
   \centering
   \begin{tabular}{c}
   \begin{lstlisting}[language=SQL]
-    SELECT * FROM tbl WHERE tbl.str = "str"
+    SELECT * FROM table WHERE tbl.str = "str"
   \end{lstlisting}
   \end{tabular}
   \caption[Example listing]{An example for a source code listing.}\label{fig:sample-listing}
 \end{figure}
+
+\begin{figure}[htpb]
+  \centering
+  \includegraphics[width=\textwidth]{../figures/pybind_schema.png}
+  \caption[Example image]{An example for a simple image.}\label{fig:sample-image}
+\end{figure}
+
+
+\input{figures/swig_pybind_sp.tex}

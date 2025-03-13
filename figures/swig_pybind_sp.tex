@@ -1,0 +1,56 @@
+\begin{figure}[htpb]
+    \centering
+  
+    \pgfplotstableset{col sep=&, row sep=\\}
+    \pgfplotstableread{
+      x & swig & pybind11 \\
+      10 & 0.831514591 & 1.058577497 \\
+      20 & 1.127118936 & 1.471500208 \\
+      30 & 1.4772158 & 1.761273233 \\
+      40 & 1.736514494 & 2.126912437 \\
+      50 & 2.025210358 & 2.46362231 \\
+      60 & 2.214553424 & 2.804167879 \\
+      70 & 2.603474917 & 3.326882148 \\
+      80 & 2.877264073 & 3.673826322 \\
+      90 & 3.352056939 & 3.967651672 \\
+      100 & 3.392421572 & 4.391185498 \\
+      110 & 3.703171002 & 4.916812021 \\
+      120 & 4.275075549 & 5.214867283 \\
+      130 & 5.214835618 & 5.347268902 \\
+      140 & 6.241614607 & 5.945904962 \\
+      150 & 6.595369415 & 6.519765277 \\
+      160 & 6.967670258 & 7.11302645 \\
+      170 & 7.165744065 & 7.452702384 \\
+      180 & 7.80374477 & 7.193507064 \\
+      190 & 8.358989104 & 7.662745811 \\
+      200 & 8.92708868 & 7.899299085 \\
+      210 & 9.175657786 & 8.070269308 \\
+      220 & 9.27380257 & 8.513974392 \\
+      230 & 9.771330559 & 8.768865073 \\
+      240 & 10.07812149 & 8.980851734 \\
+      250 & 10.57007511 & 9.686946998 \\
+      260 & 10.93630689 & 9.962699361 \\
+      270 & 11.02586082 & 10.96497769 \\
+      280 & 11.80790557 & 10.70239503 \\
+      290 & 12.17019807 & 11.02871699 \\
+      300 & 12.6979764 & 11.43657468 \\
+    }\data
+  
+    \begin{tikzpicture}
+      \begin{axis}[
+          ymin=0,
+          ymax=20,
+          legend style={legend pos=north west},
+          grid,
+          thick,
+          ylabel=Time (seconds),
+          xlabel=Input Size
+        ]
+        \addplot+[mark=none] table[x=x, y=swig]{\data};
+        \addlegendentry{SWIG -O3, shared-pointers}
+        \addplot+[mark=none] table[x=x, y=pybind11]{\data};
+        \addlegendentry{PyBind11 -O3, shared-pointers}
+      \end{axis}
+    \end{tikzpicture}
+    \caption[Plot of SWIG and PyBind11 with shared-pointers]{A plot comparing the performance of SWIG and PyBind11 with optimization flag -O3 and shared-pointers.}\label{fig:swig-pybind11-shared-pointers-plot}
+  \end{figure}
