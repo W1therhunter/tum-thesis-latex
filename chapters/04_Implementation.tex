@@ -1,0 +1,100 @@
+\chapter{Implementation}\label{chapter:Implementation}
+
+\section{Project Structure}
+
+The Python bindings for the sys\_sage library are encapsulated within a dedicated wrapper file. This file serves as the primary interface between the C++ library and the Python environment, ensuring a structured and maintainable codebase. The general layout of this file is as follows:
+\begin{figure}[htpb]
+    \centering
+    \begin{tabular}{c}
+        \begin{lstlisting}[language=C++]
+            #include <pybind11/pybind11.h>
+            #include <pybind11/stl.h>
+            #include <pybind11/attr.h>
+            #include "sys-sage.hpp"
+            
+            // Global variables and helper functions
+            
+            PYBIND11_MODULE(sys_sage, m) {
+                // Expose C++ enums to Python
+                m.attr("COMPONENT_NONE") = SYS_SAGE_COMPONENT_NONE;
+            
+                // Bind the Component class
+                py::class_<...>(m, "Component", ..., "Generic Component")
+                    // Bind the constructor(s)
+                    .def(py::init<...>())
+                    // Bind member functions
+                    .def("InsertChild", &Component::InsertChild, ...)
+                    // Bind properties (getters and setters)
+                    .def_property("parent", &Component::GetParent, &Component::SetParent, ...);
+            
+                // Bind module-level functions
+                m.def("parseCccbenchOutput", &parseCccbenchOutput, ...);
+            }
+            \end{lstlisting}
+    \end{tabular}
+    \caption[Structure of the wrapper file]{The structure of the wrapper file.}\label{fig:wrapper-structure}
+  \end{figure}
+
+
+This structure is designed to provide a clear and organized layout, facilitating easy navigation and modification of the bindings. The file is segmented into distinct sections, each serving a specific purpose:
+
+\begin{itemize}
+    \item   \textbf{Include Directives:} Essential header files, including those from pybind11 and the sys\_sage library, are included to provide the necessary functionalities.
+    \item   \textbf{Global Variables and Helper Functions:} This section accommodates any global variables or helper functions required for the bindings.
+    \item   \textbf{PYBIND11\_MODULE Macro:} This macro defines the Python module and its contents. Within this macro, the following elements are defined:
+        \begin{itemize}
+            %TODO This is not really true
+            \item   \textbf{Enums:} C++ enums are exposed to Python, allowing Python code to use these constants.
+            \item   \textbf{Class Bindings:} C++ classes are bound to Python classes using \verb|py::class_<>|. This includes defining constructors, methods, and properties.
+            \item   \textbf{Module Functions:} C++ functions that are not class methods are bound to the Python module itself.
+        \end{itemize}
+\end{itemize}
+
+This structured approach ensures that the bindings are well-organized and easy to maintain, providing a solid foundation for the Python interface of the sys\_sage library.
+
+\section{Ownership Management and Return-Value Policies}
+
+A critical challenge in interfacing C++ with Python involves the management of object ownership, particularly concerning the \verb|Component| objects within the sys\_sage library. By default, pybind11 transfers ownership of the underlying C++ object to the Python side. This implies that when a Python object, such as \verb|c = sys_sage.Component()|, is created, Python assumes responsibility for its lifecycle, including reference counting and deallocation. While this approach is generally adequate for objects without external dependencies, it becomes problematic when dealing with interconnected components, such as parent-child relationships or datapath associations.
+
+Consider the following scenario:
+
+\begin{figure}[htpb]
+  \centering
+  \begin{tabular}{c}
+  \begin{lstlisting}[language=Python]
+c = sys_sage.Component()
+child = sys_sage.Component(c) # Parent set in constructor
+del c
+d = child.parent
+print(d.id) # Undefined behaviour
+  \end{lstlisting}
+  \end{tabular}
+  \caption{Example of dangling reference due to ownership transfer.}\label{fig:ownership-example}
+\end{figure}
+
+In this example, deleting \verb|c| in Python leads to the deallocation of the corresponding C++ object. However, the \verb|child| object retains a reference to the now-deleted parent. Consequently, accessing \verb|child.parent| results in undefined behavior, as the referenced object no longer exists. This issue arises because the \verb|Component| destructor does not update references in related objects, such as parent nodes, child nodes, or datapaths.
+
+An initial attempt to address this problem involved implementing a custom delete function, \verb|delete(bool withSubtree)|, to replace the default destructor. However, this approach was deemed unsuitable due to potential conflicts with Python's garbage collection mechanism. As noted in pybind11's documentation, overriding the \verb|__del__(self)| method in Python is strongly discouraged, as it can interfere with the garbage collection process.
+
+To mitigate these issues, pybind11's capability to disable ownership transfer was utilized. By modifying the template parameters of the \verb|py::class_<>| declaration, ownership of the C++ objects can be retained by the C++ side. Specifically, the \verb|std::unique_ptr<Component, py::nodelete>| template parameter was employed. The \verb|py::nodelete| keyword instructs pybind11 to prevent Python from deallocating the underlying C++ object. This ensures that the C++ side remains responsible for managing object lifetimes.
+
+However, this solution introduces a new challenge. The base C++ program provides methods for manually deleting objects, which, when exposed to Python, can lead to inconsistencies. For instance:
+
+\begin{figure}[htpb]
+  \centering
+  \begin{tabular}{c}
+  \begin{lstlisting}[language=Python]
+import sys_sage
+
+c = sys_sage.Component()
+d = c
+c.Delete()
+d.Delete() #Segmentation Fault
+  \end{lstlisting}
+  \end{tabular}
+  \caption{Example of manual deletion leading to inconsistencies.}\label{fig:manual-deletion-example}
+\end{figure}
+
+In this scenario, deleting \verb|c| using the \verb|Delete()| method deallocates the C++ object, but the Python wrapper \verb|d| remains unaware of this change. Ideally, all references to the deleted object should be updated. Unfortunately, pybind11 does not provide a mechanism for automatically updating these references. While this scenario is relatively rare, it underscores the need for careful consideration of object deletion strategies.
+
+Furthermore, pybind11, by default, invokes the destructor of the underlying C++ object when the reference count reaches zero. To enhance consistency, modifying the destructor to update relevant references was considered. This would ensure that when a component is deleted, all related references are updated, preventing dangling pointers. However, this approach requires further testing to evaluate its feasibility and impact.
