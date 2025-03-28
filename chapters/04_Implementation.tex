@@ -58,19 +58,13 @@ A critical challenge in interfacing C++ with Python involves the management of o
 
 Consider the following scenario:
 
-\begin{figure}[htpb]
-  \centering
-  \begin{tabular}{c}
-  \begin{lstlisting}[language=Python]
+  \begin{lstlisting}[language=Python, xleftmargin=4em]
 c = sys_sage.Component()
 child = sys_sage.Component(c) # Parent set in constructor
 del c
 d = child.parent
 print(d.id) # Undefined behaviour
   \end{lstlisting}
-  \end{tabular}
-  \caption{Example of dangling reference due to ownership transfer.}\label{fig:ownership-example}
-\end{figure}
 
 In this example, deleting \verb|c| in Python leads to the deallocation of the corresponding C++ object. However, the \verb|child| object retains a reference to the now-deleted parent. Consequently, accessing \verb|child.parent| results in undefined behavior, as the referenced object no longer exists. This issue arises because the \verb|Component| destructor does not update references in related objects, such as parent nodes, child nodes, or datapaths.
 
@@ -79,11 +73,8 @@ An initial attempt to address this problem involved implementing a custom delete
 To mitigate these issues, pybind11's capability to disable ownership transfer was utilized. By modifying the template parameters of the \verb|py::class_<>| declaration, ownership of the C++ objects can be retained by the C++ side. Specifically, the \verb|std::unique_ptr<Component, py::nodelete>| template parameter was employed. The \verb|py::nodelete| keyword instructs pybind11 to prevent Python from deallocating the underlying C++ object. This ensures that the C++ side remains responsible for managing object lifetimes.
 
 However, this solution introduces a new challenge. The base C++ program provides methods for manually deleting objects, which, when exposed to Python, can lead to inconsistencies. For instance:
-
-\begin{figure}[htpb]
-  \centering
-  \begin{tabular}{c}
-  \begin{lstlisting}[language=Python]
+\newpage
+  \begin{lstlisting}[language=Python, xleftmargin=4em]
 import sys_sage
 
 c = sys_sage.Component()
@@ -91,10 +82,351 @@ d = c
 c.Delete()
 d.Delete() #Segmentation Fault
   \end{lstlisting}
-  \end{tabular}
-  \caption{Example of manual deletion leading to inconsistencies.}\label{fig:manual-deletion-example}
-\end{figure}
+  
 
 In this scenario, deleting \verb|c| using the \verb|Delete()| method deallocates the C++ object, but the Python wrapper \verb|d| remains unaware of this change. Ideally, all references to the deleted object should be updated. Unfortunately, pybind11 does not provide a mechanism for automatically updating these references. While this scenario is relatively rare, it underscores the need for careful consideration of object deletion strategies.
 
 Furthermore, pybind11, by default, invokes the destructor of the underlying C++ object when the reference count reaches zero. To enhance consistency, modifying the destructor to update relevant references was considered. This would ensure that when a component is deleted, all related references are updated, preventing dangling pointers. However, this approach requires further testing to evaluate its feasibility and impact.
+\section{Object-Oriented Programming with pybind11}
+
+\subsection{Class Definitions}
+
+Python and C++ both offer object-oriented programming. C++ differentiates between structs and classes, while Python primarily uses classes. pybind11 allows C++ structs to be bound to act like Python classes.
+
+For each functionality, a table is provided for comparison.
+
+\begin{table}[htbp]
+\centering
+\begin{tabular}{|l|l|}
+\hline
+\textbf{C++ implementation} &
+\begin{lstlisting}[language=C++]
+class Component {
+    // ...
+};
+\end{lstlisting}
+\\ \hline
+\textbf{Pybind11-Binding} &
+\begin{lstlisting}[language=C++]
+py::class_<Component, std::unique_ptr<Component, py::nodelete>>(
+    m, "Component", "Generic Component"
+);
+\end{lstlisting}
+\\ \hline
+\textbf{C++ usage} &
+\verb|Component;| \\ \hline
+\textbf{Python usage} &
+\verb|sys_sage.Component| \\ \hline
+\end{tabular}
+\caption{Class Definition Comparison}
+\label{tab:class_definition}
+\end{table}
+
+Header files define classes. pybind bindings are defined in the binding file within the module. To use \verb|sys-sage| in C++, we need to include \verb|syssage.hpp| in the project. To use \verb|sys-sage| in Python, we need to include \verb|sys_sage|, where we can also rename the module.
+
+\textit{Note:} With usage, we mean that we access the class. Construction comes next.
+
+\smallskip
+We can see that pybind bindings are straightforward. We use \verb|py::class_<T>| where \verb|T| is the template input, in this case, \verb|Component|. As mentioned in the previous chapter, for pybind to indicate that component objects should not be destroyed by Python, we use \verb|std::unique_ptr<T>| as holder type for the Component class, and we add a delete function, that is \verb|py::nodelete|. There are also other methods to define how Python should handle the underlying C++ objects.
+
+The \verb|py::class_| has some arguments:
+
+\begin{itemize}
+    \item Module
+    \item Class-Name “Component”
+    \item Class-Documentation “Generic Component”
+\end{itemize}
+
+%*TODO:* Improve Documentation. Helpful feature to add documentation to the project and help users understand usage better.
+
+\subsection{Constructor}
+
+If we would define a class in native Python, it might look like this:
+
+\begin{lstlisting}[language=Python, xleftmargin=4em]
+class Example(self):
+    def __init__(self, id, name):
+        self.id = id
+        self.name = name
+\end{lstlisting}
+
+With pybind, we can take already defined Constructors of C++ implementation and can use the convenience function \verb|init<>()| that binds automatically the C++ Constructors.
+
+\begin{table}[htbp]
+\centering
+\begin{tabular}{|l|l|}
+\hline
+\textbf{C++ implementation} &
+\begin{lstlisting}[language=C++]
+Component(
+    int id = 0,
+    string name = "unknown",
+    int componentType = SYS_SAGE_COMPONENT_NONE
+);
+\end{lstlisting}
+\\ \hline
+\textbf{Pybind11-Binding} &
+\begin{lstlisting}[language=C++]
+.def(
+    py::init<int, string, int>(),
+    py::arg("id") = 0,
+    py::arg("name") = "unknown",
+    py::arg("type") = SYS_SAGE_COMPONENT_NONE
+)
+\end{lstlisting}
+\\ \hline
+\textbf{C++ usage} &
+\verb|new Component();| \\ \hline
+\textbf{Python usage} &
+\verb|sys_sage.Component()| \\ \hline
+\end{tabular}
+\caption{Constructor Comparison}
+\label{tab:constructor}
+\end{table}
+
+C++ implementation provides a bunch of Constructors for Component-Class and Subclasses. In our use case, Pybind's convenience function is indeed convenient.
+
+For all functions and properties we want to bind to, we use \verb|.def(...)|. Only after all the definitions we close the Classes definitions with a semicolon.
+
+Now back to initialization function, we call \verb|py::init<T>()|. As one can see, this is a template function, and we replace \verb|T| with all the types of the Arguments there are defined in the C++ Constructor. In our example case, we have \verb|int|, \verb|string|, \verb|int| in this order.
+
+As in every definition of a function in the bindings, we can use \verb|py::arg| to not only define default values but also we can give the argument names for the documentation. In this case, this might look like this: \verb|py::arg("id") = 0|. Instead of this, there is also a shorthand notation that would look like this: \verb|"id"_a=0|. However, the literal operator must be made visible before with \verb|using namespace pybind11::literals|.
+\begin{lstlisting}[language=C++, xleftmargin=4em]
+            // Component-constructor without parent
+            .def(
+                py::init<int, string, int>(),
+                py::arg("id") = 0,
+                py::arg("name") = "unknown",
+                py::arg("type") = SYS_SAGE_COMPONENT_NONE
+            )
+            
+            // Component-constructor with parent
+            .def(
+                py::init<Component *, int, string, int>(),
+                py::arg("parent"),
+                py::arg("id") = 0,
+                py::arg("name") = "unknown",
+                py::arg("type") = SYS_SAGE_COMPONENT_NONE
+            )
+\end{lstlisting}
+% *TODO:* Add shorthand notation in pybinds.
+\subsection{Inheritance}
+
+If we had to define Inheritance in Python, we can do it like this:
+\newpage
+\begin{lstlisting}[language=Python, xleftmargin=4em]
+class Vehicle:
+    def honk(self):
+        print("Honk!")
+
+class Car(Vehicle):
+    def drive(self):
+        print("Vroom!")
+
+my_car = Car()
+my_car.honk()
+my_car.drive()
+\end{lstlisting}
+
+The \verb|sys_sage| library has \verb|Component| as a generic class and many Component-Types as Subclasses. Inheritance should work properly, and indeed Pybind supports that.
+
+\begin{table}[htbp]
+\centering
+\begin{tabular}{|l|l|}
+\hline
+\textbf{C++ implementation} &
+\begin{lstlisting}[language=C++]
+class Topology : public Component {
+    // ...
+};
+\end{lstlisting}
+\\ \hline
+\textbf{Pybind11-Binding} &
+\begin{lstlisting}[language=C++]
+py::class_<
+    Topology,
+    std::unique_ptr<Topology, py::nodelete>,
+    Component
+>(m, "Topology")
+\end{lstlisting}
+\\ \hline
+\textbf{C++ usage e.g.} &
+\begin{lstlisting}[language=C++]
+t.GetId();  // t is Topology, but can access Component's 
+            // attributes and functions
+\end{lstlisting}
+\\ \hline
+\textbf{Python usage} &
+\verb|t.id() # Works as in C++| \\ \hline
+\end{tabular}
+\caption{Inheritance Comparison}
+\label{tab:inheritance}
+\end{table}
+
+The super-class is given as input in the template of \verb|py::class_<>|. Pybind will automatically care that all the functions and attributes from the super class are accessible to the Subclass. Multiple inheritance is also allowed. This is not yet needed but maybe in the future.
+
+\subsection{Functions}
+
+With pybind, binding functions are quite simple. Consider this C++ function for example:
+
+\begin{table}[htbp]
+\centering
+\begin{tabular}{|l|l|}
+\hline
+\textbf{C++ implementation} &
+\begin{lstlisting}[language=C++]
+void Component::InsertChild(Component * child){
+    // ...
+}
+\end{lstlisting}
+\\ \hline
+\textbf{Pybind11-Binding} &
+\begin{lstlisting}[language=C++]
+.def(
+    "InsertChild",
+    &Component::InsertChild,
+    py::arg("child")
+)
+\end{lstlisting}
+\\ \hline
+\textbf{C++ usage e.g.} &
+\verb|c.InsertChild(child)| \\ \hline
+\textbf{Python usage} &
+\verb|c.InsertChild(child)| \\ \hline
+\end{tabular}
+\caption{Function Comparison}
+\label{tab:function}
+\end{table}
+
+In \verb|.def()|, the first argument is the name of the method. Normally in Python, the convention is to use snake-case for the method-name. In this case, we use the same name as in the C++ implementation. For some other specific methods, we use more simple names, but more on this in the “Attribute”-Section. The next argument is the C++ function to bind, and the last argument is the argument name for the function. This is not necessary, but it helps for documentation and allows usage of keyword arguments.
+
+\subsection{Overloaded methods}
+
+To use overloaded methods, we need to pick up the method signature to map the correct overloaded method.
+\newpage
+\begin{table}[htbp]
+\centering
+\begin{tabular}{|l|l|}
+\hline
+\textbf{C++ implementation} &
+\begin{lstlisting}[language=C++]
+void Component::PrintSubtree() {
+    PrintSubtree(0);
+}
+
+void Component::PrintSubtree(int level) {
+    PrintSubtree(0);
+}
+\end{lstlisting}
+\\ \hline
+\textbf{Pybind11-Binding} &
+\begin{lstlisting}[language=C++]
+.def(
+    "PrintSubtree",
+    (void (Component::)()) \&Component::PrintSubtree,
+    "Print the subtree of the component"
+)
+
+.def(
+    "PrintSubtree",
+    (void (Component::)(int)) \&Component::PrintSubtree,
+    "Print the subtree ..."
+)
+\end{lstlisting}
+\\ \hline
+\textbf{C++ usage e.g.} &
+\begin{lstlisting}[language=C++]
+c.PrintSubtree();
+c.PrintSubtree(0);
+\end{lstlisting}
+\\ \hline
+\textbf{Python usage} &
+\begin{lstlisting}[language=Python]
+c.PrintSubtree()
+c.PrintSubtree(0)
+\end{lstlisting}
+\\ \hline
+\end{tabular}
+\caption{Overloaded Methods Comparison}
+\label{tab:overloaded_methods}
+\end{table}
+
+The only difference to “normal” binding is that with overloading, we add the method signature, which is in this case \verb|void (Component::) ()| and \verb|void (Component::) (int)| respectively, which we add before \verb|\&Component::PrintSubtree|.
+
+%*TODO:* Maybe add more?
+
+\subsection{Lambda functions}
+
+In some cases, we don't have a C++ we can bind to. This is because either we want to add some additional methods or there is some logic needed before the C++ function can be called.
+
+For the first case, we have this example:
+\newpage
+\begin{lstlisting}[language=C++, xleftmargin=4em]
+.def(
+    "__bool__",
+    [](Component\& self){
+        std::vector<Component*> children = self.GetChildren();
+        return !children->empty();
+    }
+)
+\end{lstlisting}
+
+Here, we define the bool-function, which is called whenever we want to extract a bool value from an object of any type, in this case Component-type. Within the lambda function, we check if the Component object has any children. This is convenient because we can then in Python do this:
+
+\begin{lstlisting}[language=Python,xleftmargin=4em]
+comp = sys_sage.Component()
+# ...
+if comp:
+    # comp has children
+else:
+    # comp has no children
+\end{lstlisting}
+
+So this is an example for an extra feature that is not there in the base implementation of \verb|sys\_sage| in C++. But this also shows that there it is quite straightforward to add more functionalities with a few lines of code.
+
+\subsection{Module functions}
+
+Previously presented methods are class methods, but there are also module functions that are not to be accessed over an object but see for yourself:
+
+\begin{table}[htbp]
+\centering
+\begin{tabular}{|l|l|}
+\hline
+\textbf{C++ implementation} &
+\begin{lstlisting}[language=C++]
+int parseCapsNumaBenchmark(
+    Component* rootComponent,
+    string benchmarkPath,
+    string delim
+){
+    // ...
+}
+\end{lstlisting}
+\\ \hline
+\textbf{Pybind11-Binding} &
+\begin{lstlisting}[language=C++]
+m.def(
+    "parseCapsNumaBenchmark",
+    \&parseCapsNumaBenchmark,
+    py::arg("root"),
+    py::arg("benchmarkPath"),
+    py::arg("delim") = ";"
+);
+\end{lstlisting}
+\\ \hline
+\textbf{C++ usage e.g.} &
+\verb|parseCapsNumaBenchmark( root, “benchmark.csv”, “;”);| \\ \hline
+\textbf{Python usage} &
+\verb|sys_sage.parseCapsNumaBenchmark(root, "benchmark.csv", ";")| \\ \hline
+\end{tabular}
+\caption{Module Function Comparison}
+\label{tab:module_functions}
+\end{table}
+
+So this is quite similar to the class methods, but here we assign the function to the module interface object \verb|m|.
+
+\subsection{More functions}
+
+It is possible to define some helper functions outside the \verb|PYBIND_MODULE()| Makro. We need this to perform the xml operations.
+
+More on this in the xml-I/O Section.
