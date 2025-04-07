@@ -1,1 +1,29 @@
 \chapter{Future Work}\label{chapter:fw_conc} 
+
+\section{Future Work}
+
+\subsection{Optimization Flags and Performance Improvements}
+
+The base implementation, while functional, lacks optimization flags, which significantly impacts performance. To enhance the efficiency of the C++ components, future iterations should incorporate appropriate compiler optimization flags as this would also improve the performance in the Python layer.
+
+\subsection{Smart Pointers vs. Raw Pointers}
+
+Transitioning from raw pointers to smart pointers offers a robust approach to memory management. This transition will mitigate the risk of resource leaks and streamline the allocation and deallocation of memory. Specifically, storing attribute values as smart pointers eliminates the need for manual deletion, enhancing code safety and maintainability.
+
+\subsection{Enhanced Destructor Usage}
+
+Elaborating on the use of destructors will further improve compatibility with smart pointers in future developments. This proactive approach ensures that resource cleanup is handled consistently and efficiently, regardless of the memory management strategy employed.
+
+\subsection{Pybind11 Enhancements}
+
+To maximize the benefits of Pybind11, future work should focus on exploring its full potential. This includes investigating advanced features and optimizing the interface between C++ and Python to reduce overhead and improve data access patterns.
+
+\section{Conclusion}
+
+This thesis explored various technologies for integrating C++ with Python, with a particular focus on SWIG and Pybind11. While both technologies offer viable solutions, Pybind11 emerged as the preferred choice due to its superior documentation, steeper learning curve, and comprehensive feature set.
+
+A significant enhancement implemented in this project is the addition of XML import functionality. This feature allows users to import XML data in both the C++ and Python versions of the application. Furthermore, users can define custom parsing functions within the Sys-Sage framework, providing flexibility and control over the data ingestion process. This functionality represents a substantial improvement in the application's data handling capabilities.
+
+Despite exhibiting a slight performance overhead, Pybind11 provides a user experience that closely resembles native C++ development. The performance considerations, particularly regarding data access, highlight the importance of careful design and implementation. For larger projects, the integration of system-level functionality may present challenges. However, for rapid prototyping and testing, Pybind11 proves to be an invaluable tool.
+
+In summary, the chosen integration approach facilitates a seamless and efficient interaction between C++ and Python, making it a compelling choice for projects that require a balance of performance and development speed.
