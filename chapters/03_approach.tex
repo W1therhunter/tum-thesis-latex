@@ -40,10 +40,20 @@ Python programmers, who may not be accustomed to the intricacies of C++ programm
 \subsection{Technology Evaluation for Python Integration}
 
 Several technologies were considered for their potential to facilitate the integration of our C++ library with Python. Each option presents a unique set of features and trade-offs concerning performance, ease of implementation, and compatibility with modern C++ constructs.
+Furthermore we provided some sketches that show which steps are involved to use the technologies in a project. These illustrations should only give a rough idea behind the application of the different options.
 
 \subsubsection{ctypes: Direct Library Interaction}
 
 ctypes enables Python to directly interface with dynamic link libraries, providing access to C-compatible data types and functions. While straightforward for basic C interactions, it necessitates manual type conversions and lacks native support for C++ object-oriented features. This can complicate the wrapping of libraries with complex C++ structures and inheritance.
+
+\begin{figure}[htpb]
+    \centering
+    \includegraphics[width=\textwidth]{figures/pybind_schema.png}
+    \caption{Pybind11 Schema}
+    \label{fig:pybind11-schema}
+\end{figure}
+
+
 
 \subsubsection{Cython: Compiled Python Extensions}
 
@@ -51,7 +61,7 @@ Cython allows for the compilation of Python-like code into optimized C, potentia
 
 \subsubsection{pybind11: Modern C++ Bindings}
 
-pybind11 is a header-only library designed to simplify the creation of Python bindings for C++ code. It leverages compile-time introspection to minimize boilerplate and offers robust support for modern C++ features, including templates and STL data structures. Its design prioritizes ease of use and maintainability.
+pybind11 is a header-only library designed to simplify the creation of Python bindings for C++ code. It leverages compile-time introspection to minimize boilerplate and offers robust support for modern C++ features, including templates and \ac{STL} data structures. Its design prioritizes ease of use and maintainability.
 
 \subsubsection{SWIG: Multi-Language Interface Generation}
 
@@ -63,7 +73,7 @@ The Python/C API provides a direct mechanism for extending the Python interprete
 
 \subsubsection{Alternative Binding Tools}
 
-Other tools, such as Boost.Python and Cffi, offer alternative approaches. Boost.Python, while powerful, introduces significant dependencies. Cffi, primarily designed for C, may not fully support the complexities of modern C++ libraries, particularly those utilizing modern C++ features.
+Other tools, such as Boost.Python and Cffi, offer alternative approaches. Boost.Python, while powerful, introduces complex installation process. Cffi, primarily designed for C, may not fully support the complexities of modern C++ libraries, particularly those utilizing modern C++ features.
 \subsection{Performance Comparison}
 
 Performance is a critical consideration, especially for tasks involving searching and updating components in large topologies. The overhead associated with each technology, including function calls and type casting, must be evaluated.
@@ -79,6 +89,6 @@ The selection of pybind11 as the primary technology for creating Python bindings
 
 A significant drawback of SWIG is its reliance on a unique interface definition language. This necessitates that developers learn a new syntax, distinct from both C++ and Python, which can impede development speed and increase the learning curve for new contributors. In contrast, pybind11, being a header-only library embedded within C++, offers a more intuitive and familiar development environment for C++ programmers. This direct integration with C++ simplifies the process of creating and maintaining bindings, making it easier for future developers to understand and extend the project.
 
-This decision aligns with findings from independent benchmarks, such as those presented in the related work chapter, which highlight pybind11's superior usability despite potential performance trade-offs. The ease of integration and the reduced cognitive load for developers translate to faster development cycles and improved maintainability—critical factors for the long-term success of the sys\_sage library's Python interface.
+This decision aligns with findings from independent benchmarks, such as those presented in the \autoref{chapter:Related Work}, which highlight pybind11's superior usability despite potential performance trade-offs. The ease of integration and the reduced cognitive load for developers translate to faster development cycles and improved maintainability—critical factors for the long-term success of the sys\_sage library's Python interface.
 
-Furthermore, pybind11's robust support for C++ features, including STL containers and inheritance, aligns perfectly with the sys\_sage library's complexity. Its ability to seamlessly handle these features simplifies the wrapping process and ensures that the Python interface accurately reflects the C++ library's functionality. This comprehensive feature support, combined with its ease of use, makes pybind11 the optimal choice for creating a maintainable and extensible Python interface for the sys\_sage library.
+Furthermore, pybind11's robust support for C++ features, including \ac{STL} containers and inheritance, aligns perfectly with the sys\_sage library's complexity. Its ability to seamlessly handle these features simplifies the wrapping process and ensures that the Python interface accurately reflects the C++ library's functionality. This comprehensive feature support, combined with its ease of use, makes pybind11 the optimal choice for creating a maintainable and extensible Python interface for the sys\_sage library.

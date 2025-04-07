@@ -4,28 +4,19 @@
 \chapter{Introduction}\label{chapter:introduction}
 \section{Introduction to Sys-Sage Library}
 
-High-Performance Computing (HPC) systems have undergone significant transformations, becoming increasingly complex. This complexity arises from the integration of various components, particularly the growing reliance on multi-core processors and \ac{GPU}s. As modern architectures evolve, understanding system behavior becomes more challenging, necessitating more sophisticated analysis tools.
+\ac{HPC} systems have undergone significant transformations, becoming increasingly complex. This complexity arises from the integration of various components, particularly the growing reliance on multi-core processors and \ac{GPU}s. As modern architectures evolve, understanding system behavior becomes more challenging, necessitating more sophisticated analysis tools. Several approaches exist for analyzing system architectures, with one of the most commonly used tools being \texttt{hwloc}. This tool facilitates the construction of hardware topologies, mapping essential building blocks such as cores, caches, and \ac{NUMA} nodes. While \texttt{hwloc} provides fundamental insights into system topology and application scheduling, it is limited to \ac{CPU}-based static analysis. However, contemporary architectures introduce dynamic resource allocation and isolation, rendering static analysis insufficient for comprehensive system evaluation. Consequently, dynamic analysis becomes increasingly valuable in modern computing environments. Given the growing dynamism of \ac{HPC} systems, a unified tool that consolidates the advantages of existing solutions while incorporating real-time hardware and resource utilization changes would be highly beneficial. \cite{sys-sage} \cite{numa}
 
-Several approaches exist for analyzing system architectures, with one of the most commonly used tools being \texttt{hwloc}. This tool facilitates the construction of hardware topologies, mapping essential building blocks such as cores, caches, and \ac{NUMA} nodes. While \texttt{hwloc} provides fundamental insights into system topology and application scheduling, it is limited to \ac{CPU}-based static analysis.
-
-However, contemporary architectures introduce dynamic resource allocation and isolation, rendering static analysis insufficient for comprehensive system evaluation. Consequently, dynamic analysis becomes increasingly valuable in modern computing environments. Given the growing dynamism of \ac{HPC} systems, a unified tool that consolidates the advantages of existing solutions while incorporating real-time hardware and resource utilization changes would be highly beneficial.
-
-The \texttt{Sys-Sage} library addresses this need by offering a unified \ac{API} for accessing the state of modern architectures. As an \ac{open-source} solution, \texttt{Sys-Sage} is highly adaptable and supports the integration of diverse datasets, such as \ac{GPU} benchmarks and power efficiency metrics, enabling a comprehensive understanding of system performance. It constructs an internal representation of hardware topology alongside data paths, allowing for both \textbf{export} and, in future iterations, \textbf{import} capabilities to facilitate data storage and retrieval.
+The \texttt{Sys-Sage} library addresses this need by offering a unified \ac{API} for accessing the state of modern architectures. As an open-source solution, \texttt{Sys-Sage} is highly adaptable and supports the integration of diverse datasets, such as \ac{GPU} benchmarks and power efficiency metrics, enabling a comprehensive understanding of system performance. It constructs an internal representation of hardware topology alongside data paths, allowing for both export and, with this work, import capabilities to facilitate data storage and retrieval. \cite{sys-sage} \cite{py-c-api}
 
 \section{Scope of This Work}
 
-Currently, \texttt{Sys-Sage} provides support exclusively for \ac{C++}, limiting its accessibility to a broader audience. Meanwhile, \ac{Python} has emerged as the most widely used programming language, surpassing JavaScript with \textbf{16.925\%} of all GitHub projects developed in \ac{Python}\parencite{python-github-stats}. Given its widespread adoption, introducing a \ac{Python} \ac{API} for \texttt{Sys-Sage} would significantly enhance usability, enabling a larger community to leverage its capabilities.
+Currently, \texttt{Sys-Sage} provides support exclusively for C++, limiting its accessibility to a broader audience. Meanwhile, Python has emerged as the most widely used programming language, surpassing JavaScript with \textbf{16.925\%} of all GitHub projects developed in python. Given its widespread adoption, introducing a Python \ac{API} for \texttt{Sys-Sage} would significantly enhance usability, enabling a larger community to leverage its capabilities. \cite{languages-github-stats}
 
-The objective of this work is to develop a \ac{Python} interface for \texttt{Sys-Sage} while preserving the performance advantages of the underlying \ac{C++} implementation. This will be achieved by binding essential \ac{C++} library functions, allowing users to compile the code once and execute scripts efficiently with the compiled runtime.
+The objective of this work is to develop a Python interface for \texttt{Sys-Sage} while preserving the performance advantages of the underlying C++ implementation. The general idea is to expose essential C++ library functions to Python, allowing users to compile the code once and execute scripts efficiently with the compiled runtime.
 
-The \ac{Python} \ac{API} must meet the following key requirements:
-\begin{itemize}
-    \item \textbf{Ease of installation} – Users should be able to set up the library with minimal effort.
-    \item \textbf{User-friendliness} – The \ac{API} should offer an intuitive interface for seamless integration into \ac{Python}-based workflows.
-    \item \textbf{High performance} – The binding should maintain the speed and efficiency of the original \ac{C++} implementation.
-\end{itemize}
-
-By achieving these objectives, this project will bridge the gap between \texttt{Sys-Sage}'s powerful analysis capabilities and the growing \ac{Python} developer community, fostering broader adoption and enhanced system analysis in \ac{HPC} environments.
+In the next chapter, in \autoref{chapter:terms_and_definition}, we provide an overview of the \texttt{Sys-Sage} library and its components, followed by a presentation of the key differences between C++ and Python.
+In \autoref{chapter:Approach}, we compare different technologies, one of which is used for the Implementation, described in \autoref{chapter:Implementation}. After that, we present the Evaluation of the solution in \autoref{chapter:Evaluation}.
+Since this work's contribution is not finalizing the \texttt{Sys-Sage} library, we provide a description of the \ref{chapter:fw_conc} future work.
 
 \subsection{Acronyms}
 

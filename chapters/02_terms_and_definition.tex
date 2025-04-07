@@ -2,11 +2,11 @@
 
 \section{Sys-Sage Specific Terms}
 
-To understand how \texttt{Sys-Sage} operates, it is essential to define its core concepts. \texttt{Sys-Sage} is designed with a modular structure, allowing for high adaptability through various compilation options that enable different functionalities. The system is primarily composed of components, data paths, attributes, and parsers, each serving a distinct role in modeling and analyzing complex hardware architectures.
+To understand how \texttt{Sys-Sage} operates, it is essential to define its core concepts. \texttt{Sys-Sage} is designed with a modular structure, allowing for high adaptability through various compilation options that enable different functionalities. The system is primarily composed of components, data paths and their attributes, along with parsers and external interfaces, each serving a distinct role in modeling and analyzing complex hardware architectures.
 
-\subsection{Components}
+\subsection{Components }
 
-At the heart of \texttt{Sys-Sage} lies the concept of components, which represent various elements of a high-performance computing (\ac{HPC}) system. The most fundamental component is simply referred to as \texttt{Component}, a generic type that serves as the base class for all other component types. Every component inherits essential attributes such as \texttt{name}, \texttt{id}, and \texttt{type}, ensuring consistency across the system.
+At the heart of \texttt{Sys-Sage} lies the concept of components, which represent various elements of a high-performance computing (\ac{HPC}) system. The most fundamental component is simply referred to as \texttt{Component}, a generic type that serves as the base class for all other component types. Every component inherits essential attributes such as \texttt{name}, \texttt{id}, and \texttt{type}, ensuring consistency across the system. \cite[see Component]{sys-sage-docu}
 
 A key component type is \texttt{Topology}, which defines the root of an \ac{HPC} system. However, \texttt{Sys-Sage} allows any component to act as the root, offering flexibility in system representation. The \texttt{Node} component represents a computing node within an \ac{HPC} system and provides specific functions such as \texttt{RefreshCpuCoreFrequency()}, if \texttt{Proc\_Cpu} is enabled. This functions dynamically updates CPU frequencies. If the \texttt{Intel\_Pqos} extension is enabled, an additional function, \texttt{UpdateL3CATCoreCOS()}, becomes available, offering more control over cache allocation.
 
@@ -22,7 +22,7 @@ At the processing level, the \texttt{Core} component models individual cores in 
 
 \subsection{Datapaths}
 
-In addition to components, \texttt{Sys-Sage} models interconnections within an \ac{HPC} system using data paths. A data path defines a link between two arbitrary components, with each path having a well-defined source and target. While each component can have multiple data paths, individual data paths are unidirectional by default. However, bidirectional data paths can also be modeled, in which case they are stored twice—once as an incoming connection and once as an outgoing connection.
+In addition to components, \texttt{Sys-Sage} models interconnections within an \ac{HPC} system using data paths. A data path defines a link between two arbitrary components, with each path having a well-defined source and target. While each component can have multiple data paths, individual data paths are unidirectional by default. However, bidirectional data paths can also be modeled, in which case they are stored twice — once as source and once as target.
 
 Two primary attributes define data paths: \texttt{latency} and \texttt{bandwidth}, which are included by default. However, additional attributes can be incorporated depending on the specific use case, including parameters related to data transfer efficiency, system performance, and power consumption. These attributes allow data paths to accurately represent dynamic system behavior and adapt to changing configurations.
 
@@ -34,6 +34,10 @@ Both \texttt{Component} and \texttt{Datapath} classes contain a set of predefine
 
 To facilitate system analysis, \texttt{Sys-Sage} provides various parsers that allow the integration of external data sources. Supported parsers include \texttt{Caps\_Numa\_Benchmark}, \texttt{cccbench}, \texttt{hwloc}, and \texttt{mt4g}. These parsers enable the system to read relevant data and construct an internal representation of the hardware topology, making \texttt{Sys-Sage} a powerful tool for performance analysis and resource management.
 
+\subsection{External Interfaces}
+
+Some functions mentioned depend on external interfaces. These interfaces include \texttt{Intel\_Pqos}, \texttt{NVIDIA\_MIG}, and \texttt{Proc\_Cpuinfo}. They allow \texttt{Sys-Sage} to dynamically collect and analyze hardware performance data. However these interfaces are only available for systems, that have access to these technologies.
+
 \section{Differences Between C++ and Python}
 
 While \texttt{Sys-Sage} is implemented in C++, Python has emerged as one of the most popular programming languages, surpassing JavaScript with 16.925\% of all GitHub projects being coded in Python. Given its popularity, integrating Python support into \texttt{Sys-Sage} offers significant advantages in terms of usability and accessibility.
@@ -42,7 +46,7 @@ One of the most notable differences between C++ and Python is performance. C++ i
 
 Another key distinction lies in syntax and readability. Python has gained widespread adoption due to its simple, human-readable syntax, which does not require type declarations, pointers, or other low-level constructs. This makes Python easier to learn and use compared to C++.
 
-Memory management also differs significantly between the two languages. C++ requires manual memory allocation and deallocation, whereas Python employs automatic garbage collection. In \texttt{CPython}, objects maintain a reference count, and memory is deallocated once the reference count reaches zero. However, reference counting alone cannot handle cyclic dependencies, which is why Python includes a garbage collector to resolve such issues. While garbage collection simplifies memory management, it also introduces performance overhead\parencite{python-gc}. In contrast, C++ provides more control over memory but requires developers to handle allocation carefully to prevent memory leaks.
+Memory management also differs significantly between the two languages. C++ requires manual memory allocation and deallocation, whereas Python employs automatic garbage collection. In \texttt{CPython}, objects maintain a reference count, and memory is deallocated once the reference count reaches zero. However, reference counting alone cannot handle cyclic dependencies, which is why Python includes a garbage collector to resolve such issues. While garbage collection simplifies memory management, it also introduces performance overhead\parencite{python-gc}. In contrast, C++ provides more control over memory but requires developers to handle allocation carefully to prevent memory leaks. \cite{sys-sage}
 
 Another crucial difference is in multithreading and multiprocessing. C++ is well-suited for multithreaded applications and can fully utilize all available processor cores. Python, however, is limited by the Global Interpreter Lock (GIL), which allows only one thread to execute at a time. While this does not pose a problem for \ac{I/O}-intensive applications, it severely impacts CPU-bound tasks. To overcome this limitation, Python developers must use the \texttt{multiprocessing} library, which enables parallel execution across multiple processors\parencite{python-threading}.
 

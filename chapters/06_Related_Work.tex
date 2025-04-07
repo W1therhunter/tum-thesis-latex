@@ -1,0 +1,23 @@
+\chapter{Related Work}\label{chapter:Related Work}
+
+\section{Using Pybind11 with OpenFOAM}\label{sec:using-pybind11-in-openfoam} 
+
+OpenFOAM is a popular software package used for Computational Fluid Dynamics (CFD). A growing need exists to integrate Python-based machine learning with C++-based OpenFOAM, but current methods require translating Python code or models, which complicates development. 
+
+The paper by Simon Rodriguez and Philip Cardiff presents a general approach to execute Python code directly within OpenFOAM using the pybind11 library, avoiding the need for translation. pybind11 is a lightweight library that enables embedding a Python interpreter within a C++ application. The workflow involves: Beginning the OpenFOAM execution, creating a Python interpreter within OpenFOAM, transferring data between OpenFOAM and the interpreter, executing Python code from within OpenFOAM and returning results to OpenFOAM. Regarding data transfer, pybind11 allows copying data between OpenFOAM and Python, and for efficient transfer of large fields, data can be passed as NumPy arrays. Data can also be exchanged by reference for improved performance. Python scripts and functions can be loaded and executed from within OpenFOAM. 
+
+Test cases demonstrate the approach in OpenFOAM through examples like Python velocity profile boundary conditions, heat transfer solver prototyping, and field calculations using Python with machine learning. The proposed approach is feasible and efficient, and passing data as entire fields by reference is the most efficient data transfer method. In conclusion, the presented approach enables the use of Python within OpenFOAM, particularly for machine learning applications, and this method can expand the use of Python-based solutions in OpenFOAM.
+
+\section{Measuring Performance of Python-C++ Interfacing technologies}
+
+A reasonable part of this work is the comparison of the different technologies and their performance. In more detail these comparisons were made by Jevgeni Antonenko. He presents a benchmark comparing different tools for creating C++-Python bindings. 
+
+The benchmark evaluates the performance overhead of these tools, focusing on function calls and data wrapping/unwrapping, using Mandelbrot set generation and Conway's Game of Life simulations as test cases. The study compares both manual and automatic binding generators, as well as static and runtime binding approaches (including Cython, pybind11, nanobind, SWIG, CFFI, and cppyy). 
+
+The results highlight the performance differences between the tools, with manually created or static bindings generally exhibiting better performance, while runtime bindings and pybind11 show more overhead. Notably, the study also reveals that minimizing C++/Python interoperability, such as through single, comprehensive function calls, yields the best performance, regardless of the binding tool.
+
+\section{Using Pybind11 to create a python wrapper for homomorphic encryption}
+
+Alexander J. Titus and Shashwat Kishore introduced PySEAL, a Python wrapper for the SEAL homomorphic encryption library, which is implemented in C++. Homomorphic encryption allows operations on encrypted data, a technique with growing applications in bioinformatics for data privacy. 
+
+PySEAL aims to make homomorphic encryption more accessible to bioinformatics researchers by providing a Python interface to the SEAL library, facilitating rapid prototyping of bioinformatics pipelines that utilize encryption. The paper details the implementation of PySEAL using pybind11 and discusses its potential applications in areas such as encrypted mutation searching and secure E-commerce recommendation systems.

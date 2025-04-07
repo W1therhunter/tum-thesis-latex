@@ -15,7 +15,7 @@ The Python bindings for the sys\_sage library are encapsulated within a dedicate
             // Global variables and helper functions
             
             PYBIND11_MODULE(sys_sage, m) {
-                // Expose C++ enums to Python
+                // Expose C++ Macros to Python
                 m.attr("COMPONENT_NONE") = SYS_SAGE_COMPONENT_NONE;
             
                 // Bind the Component class
@@ -44,7 +44,7 @@ This structure is designed to provide a clear and organized layout, facilitating
     \item   \textbf{PYBIND11\_MODULE Macro:} This macro defines the Python module and its contents. Within this macro, the following elements are defined:
         \begin{itemize}
             %TODO This is not really true
-            \item   \textbf{Enums:} C++ enums are exposed to Python, allowing Python code to use these constants.
+            \item   \textbf{DATA:} C++ macros are exposed to Python in form of module attributes, allowing Python code to use these as constants.
             \item   \textbf{Class Bindings:} C++ classes are bound to Python classes using \verb|py::class_<>|. This includes defining constructors, methods, and properties.
             \item   \textbf{Module Functions:} C++ functions that are not class methods are bound to the Python module itself.
         \end{itemize}
@@ -58,7 +58,7 @@ A critical challenge in interfacing C++ with Python involves the management of o
 
 Consider the following scenario:
 
-  \begin{lstlisting}[language=Python, xleftmargin=4em]
+  \begin{lstlisting}[language=Python, xleftmargin=4em, frame = single]
 c = sys_sage.Component()
 child = sys_sage.Component(c) # Parent set in constructor
 del c
@@ -68,13 +68,13 @@ print(d.id) # Undefined behaviour
 
 In this example, deleting \verb|c| in Python leads to the deallocation of the corresponding C++ object. However, the \verb|child| object retains a reference to the now-deleted parent. Consequently, accessing \verb|child.parent| results in undefined behavior, as the referenced object no longer exists. This issue arises because the \verb|Component| destructor does not update references in related objects, such as parent nodes, child nodes, or datapaths.
 
-An initial attempt to address this problem involved implementing a custom delete function, \verb|delete(bool withSubtree)|, to replace the default destructor. However, this approach was deemed unsuitable due to potential conflicts with Python's garbage collection mechanism. As noted in pybind11's documentation, overriding the \verb|__del__(self)| method in Python is strongly discouraged, as it can interfere with the garbage collection process.
+An initial attempt to address this problem involved implementing a custom delete function, \verb|delete(bool withSubtree)|, to replace the default destructor. However, this approach was deemed unsuitable due to potential conflicts with Python's garbage collection mechanism. As noted in pybind11's documentation, overriding the \verb|__del__(self)| method in Python is strongly discouraged, as it can interfere with the garbage collection process. \cite[see Chapter 12]{python-gc}
 
 To mitigate these issues, pybind11's capability to disable ownership transfer was utilized. By modifying the template parameters of the \verb|py::class_<>| declaration, ownership of the C++ objects can be retained by the C++ side. Specifically, the \verb|std::unique_ptr<Component, py::nodelete>| template parameter was employed. The \verb|py::nodelete| keyword instructs pybind11 to prevent Python from deallocating the underlying C++ object. This ensures that the C++ side remains responsible for managing object lifetimes.
 
 However, this solution introduces a new challenge. The base C++ program provides methods for manually deleting objects, which, when exposed to Python, can lead to inconsistencies. For instance:
 \newpage
-  \begin{lstlisting}[language=Python, xleftmargin=4em]
+  \begin{lstlisting}[language=Python, xleftmargin=4em, frame = single]
 import sys_sage
 
 c = sys_sage.Component()
@@ -91,7 +91,7 @@ Furthermore, pybind11, by default, invokes the destructor of the underlying C++ 
 
 \subsection{Class Definitions}
 
-Python and C++ both offer object-oriented programming. C++ differentiates between structs and classes, while Python primarily uses classes. pybind11 allows C++ structs to be bound to act like Python classes.
+Python and C++ both offer object-oriented programming. C++ differentiates between structs and classes, while Python primarily uses classes. pybind11 allows C++ structs as well as classes to be bound to act like Python classes.
 
 For each functionality, a table is provided for comparison.
 
@@ -124,18 +124,9 @@ py::class_<Component, std::unique_ptr<Component, py::nodelete>>(
 
 Header files define classes. pybind bindings are defined in the binding file within the module. To use \verb|sys-sage| in C++, we need to include \verb|syssage.hpp| in the project. To use \verb|sys-sage| in Python, we need to include \verb|sys_sage|, where we can also rename the module.
 
-\textit{Note:} With usage, we mean that we access the class. Construction comes next.
-
-\smallskip
 We can see that pybind bindings are straightforward. We use \verb|py::class_<T>| where \verb|T| is the template input, in this case, \verb|Component|. As mentioned in the previous chapter, for pybind to indicate that component objects should not be destroyed by Python, we use \verb|std::unique_ptr<T>| as holder type for the Component class, and we add a delete function, that is \verb|py::nodelete|. There are also other methods to define how Python should handle the underlying C++ objects.
 
-The \verb|py::class_| has some arguments:
-
-\begin{itemize}
-    \item Module
-    \item Class-Name “Component”
-    \item Class-Documentation “Generic Component”
-\end{itemize}
+The \verb|py::class_| takes the module, class name , and class documentation as arguments.
 
 %*TODO:* Improve Documentation. Helpful feature to add documentation to the project and help users understand usage better.
 
@@ -143,7 +134,7 @@ The \verb|py::class_| has some arguments:
 
 If we would define a class in native Python, it might look like this:
 
-\begin{lstlisting}[language=Python, xleftmargin=4em]
+\begin{lstlisting}[language=Python, xleftmargin=4em, frame = single]
 class Example(self):
     def __init__(self, id, name):
         self.id = id
@@ -186,12 +177,10 @@ Component(
 
 C++ implementation provides a bunch of Constructors for Component-Class and Subclasses. In our use case, Pybind's convenience function is indeed convenient.
 
-For all functions and properties we want to bind to, we use \verb|.def(...)|. Only after all the definitions we close the Classes definitions with a semicolon.
-
-Now back to initialization function, we call \verb|py::init<T>()|. As one can see, this is a template function, and we replace \verb|T| with all the types of the Arguments there are defined in the C++ Constructor. In our example case, we have \verb|int|, \verb|string|, \verb|int| in this order.
+For all functions and properties we want to bind to, we use \verb|.def(...)|. That also applies to initialization function, where we use the function \verb|py::init<T>()|. As one can see, this is a template function, and we replace \verb|T| with all the types of the Arguments there are defined in the C++ Constructor. In our example case, we have \verb|int|, \verb|string|, \verb|int| in this order.
 
 As in every definition of a function in the bindings, we can use \verb|py::arg| to not only define default values but also we can give the argument names for the documentation. In this case, this might look like this: \verb|py::arg("id") = 0|. Instead of this, there is also a shorthand notation that would look like this: \verb|"id"_a=0|. However, the literal operator must be made visible before with \verb|using namespace pybind11::literals|.
-\begin{lstlisting}[language=C++, xleftmargin=4em]
+\begin{lstlisting}[language=C++, xleftmargin=4em, frame = single]
             // Component-constructor without parent
             .def(
                 py::init<int, string, int>(),
@@ -214,7 +203,7 @@ As in every definition of a function in the bindings, we can use \verb|py::arg| 
 
 If we had to define Inheritance in Python, we can do it like this:
 \newpage
-\begin{lstlisting}[language=Python, xleftmargin=4em]
+\begin{lstlisting}[language=Python, xleftmargin=4em, frame = single]
 class Vehicle:
     def honk(self):
         print("Honk!")
@@ -257,7 +246,7 @@ t.GetId();  // t is Topology, but can access Component's
 \end{lstlisting}
 \\ \hline
 \textbf{Python usage} &
-\verb|t.id() # Works as in C++| \\ \hline
+\verb|t.id # Works as in C++| \\ \hline
 \end{tabular}
 \caption{Inheritance Comparison}
 \label{tab:inheritance}
@@ -267,7 +256,7 @@ The super-class is given as input in the template of \verb|py::class_<>|. Pybind
 
 \subsection{Functions}
 
-With pybind, binding functions are quite simple. Consider this C++ function for example:
+With pybind, binding functions is quite simple. Consider this C++ function for example:
 
 \begin{table}[htbp]
 \centering
@@ -290,7 +279,7 @@ void Component::InsertChild(Component * child){
 \end{lstlisting}
 \\ \hline
 \textbf{C++ usage e.g.} &
-\verb|c.InsertChild(child)| \\ \hline
+\verb|c->InsertChild(child);| \\ \hline
 \textbf{Python usage} &
 \verb|c.InsertChild(child)| \\ \hline
 \end{tabular}
@@ -323,13 +312,13 @@ void Component::PrintSubtree(int level) {
 \begin{lstlisting}[language=C++]
 .def(
     "PrintSubtree",
-    (void (Component::)()) \&Component::PrintSubtree,
+    (void (Component::)()) &Component::PrintSubtree,
     "Print the subtree of the component"
 )
 
 .def(
     "PrintSubtree",
-    (void (Component::)(int)) \&Component::PrintSubtree,
+    (void (Component::)(int)) &Component::PrintSubtree,
     "Print the subtree ..."
 )
 \end{lstlisting}
@@ -351,17 +340,17 @@ c.PrintSubtree(0)
 \label{tab:overloaded_methods}
 \end{table}
 
-The only difference to “normal” binding is that with overloading, we add the method signature, which is in this case \verb|void (Component::) ()| and \verb|void (Component::) (int)| respectively, which we add before \verb|\&Component::PrintSubtree|.
+The only difference to “normal” binding is that with overloading, we add the method signature, which is in this case \verb|void (Component::) ()| and \verb|void (Component::) (int)| respectively, which we add before \verb|&Component::PrintSubtree|.
 
 %*TODO:* Maybe add more?
 
 \subsection{Lambda functions}
 
-In some cases, we don't have a C++ we can bind to. This is because either we want to add some additional methods or there is some logic needed before the C++ function can be called.
+In some cases, we don't have any C++ function we can bind to. This is because either we want to add some additional methods or there is some logic needed before the C++ function can be called.
 
 For the first case, we have this example:
 \newpage
-\begin{lstlisting}[language=C++, xleftmargin=4em]
+\begin{lstlisting}[language=C++, xleftmargin=4em, frame = single]
 .def(
     "__bool__",
     [](Component\& self){
@@ -373,7 +362,7 @@ For the first case, we have this example:
 
 Here, we define the bool-function, which is called whenever we want to extract a bool value from an object of any type, in this case Component-type. Within the lambda function, we check if the Component object has any children. This is convenient because we can then in Python do this:
 
-\begin{lstlisting}[language=Python,xleftmargin=4em]
+\begin{lstlisting}[language=Python,xleftmargin=4em, frame = single]
 comp = sys_sage.Component()
 # ...
 if comp:
@@ -382,7 +371,7 @@ else:
     # comp has no children
 \end{lstlisting}
 
-So this is an example for an extra feature that is not there in the base implementation of \verb|sys\_sage| in C++. But this also shows that there it is quite straightforward to add more functionalities with a few lines of code.
+So this is an example for an extra feature that is not there in the base implementation of \verb|sys_sage| in C++. But this also shows that there it is quite straightforward to add more functionalities with a few lines of code.
 
 \subsection{Module functions}
 
@@ -424,9 +413,369 @@ m.def(
 \end{table}
 
 So this is quite similar to the class methods, but here we assign the function to the module interface object \verb|m|.
+\newpage
 
-\subsection{More functions}
 
-It is possible to define some helper functions outside the \verb|PYBIND_MODULE()| Makro. We need this to perform the xml operations.
+\section{Attributes}
 
-More on this in the xml-I/O Section.
+This section delves into the intricacies of attributes within the \verb|sys_sage| library, expanding on the object-oriented programming concepts discussed earlier. Attributes warrant a dedicated discussion due to the numerous special cases and module-specific considerations.
+
+\subsection{Module Attributes}
+
+\verb|sys_sage| employs macros in its C++ implementation to define component and datapath types. To maintain consistency and offer similar functionality in Python, we utilize module attributes. 
+
+\begin{table}[htbp]
+\centering
+\begin{tabular}{|l|l|}
+\hline
+\textbf{C++ implementation} & \begin{lstlisting}[language=C++]
+#define SYS_SAGE_COMPONENT_NONE 1 
+\end{lstlisting} \\ \hline
+\textbf{Pybind11-Binding} & \begin{lstlisting}[language=C++]
+m.attr("COMPONENT_NONE") = SYS_SAGE_COMPONENT_NONE;
+\end{lstlisting} \\ \hline
+\textbf{C++ usage e.g.} & \verb|c.CountAllSubcomponentsByType(SYS_SAGE_COMPONENT_NONE);| \\ \hline
+\textbf{Python usage} & \verb|c.CountAllSubcomponentsByType(sys_sage.COMPONENT_NONE)| \\ \hline
+\end{tabular}
+\caption{Module Attribute Comparison}
+\label{tab:module_attributes}
+\end{table}
+
+In C++, these macros are preprocessed and replaced with their corresponding integer values. In Python, they are treated as exported variables, registered using the \verb|attr| function, effectively making them module attributes. Pybind handles the necessary type casting, as all macros resolve to integers.
+
+A naming convention is employed where the “SYS\_SAGE” prefix is omitted from the Python attribute names to avoid redundancy. As demonstrated in the example, the attributes are accessed via \verb|sys_sage.COMPONENT_NONE|.
+%TODO Add acronym
+A significant advantage of the Python implementation is its enhanced documentation capabilities. A user's \ac{IDE} or the \verb|help(sys_sage)| function in python can display all module attributes within the DATA section, aiding users in selecting the appropriate options.
+
+\subsection{Properties (Default Attributes)}
+
+In C++, class attributes are typically private and accessed through setter and getter methods. However, this pattern is not idiomatic in Python. Pybind offers the \verb|def_property| function to bind setter and getter methods to Python properties, providing a more natural syntax.
+
+\begin{table}[htbp]
+\centering
+\begin{tabular}{|l|l|}
+\hline
+\textbf{C++ implementation} & \begin{lstlisting}[language=C++]
+class Component{
+  private:
+     string name;
+};
+...
+void SetName(string name){...}
+string GetName(){...}
+\end{lstlisting} \\ \hline
+\textbf{Pybind11-Binding} & \begin{lstlisting}[language=C++]
+.def_property("name", &Component::GetName, &Component::SetName)
+\end{lstlisting} \\ \hline
+\textbf{C++ usage e.g.} & \begin{lstlisting}[language=C++]
+string name = c.GetName();
+c.SetName("name");
+\end{lstlisting} \\ \hline
+\textbf{Python usage} & \begin{lstlisting}[language=Python]
+name = c.name
+c.name = "name"
+\end{lstlisting} \\ \hline
+\end{tabular}
+\caption{Property Comparison}
+\label{tab:properties}
+\end{table}
+\newpage
+This syntax is more intuitive for Python users. Pybind also provides \verb|def_property_readonly| for read-only properties, such as the \verb|id| attribute.
+
+\begin{table}[htbp]
+\centering
+\begin{tabular}{|l|l|}
+\hline
+\textbf{C++ implementation} & \begin{lstlisting}[language=C++]
+class Component{
+  private:
+     int id;
+};
+...
+string GetId(){...}
+\end{lstlisting} \\ \hline
+\textbf{Pybind11-Binding} & \begin{lstlisting}[language=C++]
+.def_property_readonly("id", &Component::GetId)
+\end{lstlisting} \\ \hline
+\textbf{C++ usage e.g.} & \verb|int id = c.GetId();| \\ \hline
+\textbf{Python usage} & \verb|id = c.id| \\ \hline
+\end{tabular}
+\caption{Read-only Property Comparison}
+\label{tab:readonly_properties}
+\end{table}
+
+\subsection{Dynamic Attributes}
+
+Python natively supports dynamic attributes, allowing users to add attributes to objects at runtime.
+
+\begin{lstlisting}[language=Python, xleftmargin=4em, frame = single]
+class Dog():
+    # no attributes defined here
+    ...
+
+d = Dog()
+d.hungry = True
+d.hungry # True
+\end{lstlisting}
+
+This behavior is desirable for \verb|sys_sage| components and datapaths, especially considering the C++ implementation's \verb|std::map<std::string, void*> attrib| which facilitates dynamic attribute storage.
+
+\subsubsection{Attribute-Map}
+
+The \verb|attrib| map offers high flexibility and performance by storing \verb|void*| pointers with string keys. This allows for storing both C++ types for the default attributes and Python types for custom attributes. Users should be able to modify these attributes, mirroring the C++ base implementation.
+
+There are multiple possibilities to connect the \verb|attrib| map to Python attributes. For example, Pybind can activate Python's native dynamic attribute functionality using \verb|py::dynamic_attr()|.
+
+\begin{lstlisting}[language=C++, xleftmargin=4em, frame = single]
+py::class_<Component, std::unique_ptr<Component, py::nodelete>>(m, "Component", py::dynamic_attr(),"Generic Component");
+\end{lstlisting}
+
+This enables dynamic attribute usage in Python:
+
+\begin{lstlisting}[language=Python, xleftmargin=4em, frame = single]
+c = sys_sage.Component()
+c.dynamic = "attribute"
+c.dynamic # returns "attribute"
+\end{lstlisting}
+
+However, this approach conflicts with \verb|def_property()|, as overriding \verb|__setattr__| and \verb|__getattr__| breaks property functionality. Handling properties like \verb|name| or \verb|id| in custom setter and getter methods would work as well, but results in bloated code. Therefore, an alternative solution is considered. This approach uses the \verb|[]| operator to access attributes, overriding \verb|__getitem__| and \verb|__setitem__|.
+
+\begin{lstlisting}[language=Python, xleftmargin=4em, frame = single]
+c = sys_sage.Component()
+# solution with dynamic attributes
+c.example = "test"      # calls __setattr__
+c.example               # calls __getattr__
+# solution with items
+c["example"] = "test"   # calls __setitem__
+c["example"]            # calls __getitem__
+\end{lstlisting}
+
+This solution avoids conflicts with other functions.
+
+The implementation in the bindings is as follows:
+
+\begin{lstlisting}[language=C++, xleftmargin=4em, frame = single]
+.def("__setitem__", [](Component& self, const std::string& name, py::object value) {
+    set_attribute(self,name, value);
+})
+.def("__getitem__", [](Component& self, const std::string& name) {return get_attribute(self,name);
+})
+.def("__getitem__", [](Component& self, int pos) {
+    return get_attribute(self,pos);
+})
+.def("__delitem__", [](Component& self, const std::string& name) {remove_attribute(self,name);
+})
+\end{lstlisting}
+
+. Overloaded \verb|__getitem__| methods allow access by key and index. The following example demonstrates this:
+
+\begin{lstlisting}[language=Python, xleftmargin=4em, frame = single]
+c["example"] = "test"
+c[0]  # returns "test" if "example" is the only custom attribute
+\end{lstlisting}
+
+In the following we briefly explain the helper functions that are used:
+
+The \verb|set_attribute| function examines default values, converts data to C++ types, encapsulates Python data types in shared pointers, and stores them in the \verb|attrib_map|. The \verb|get_attribute| function retrieves attributes using a key or an index and casts the \verb|void*| pointers to their appropriate types. The \verb|del_attribute| function removes attributes from the map.
+
+For the Component class the second approach, using items, was chosen for its simplicity and compatibility with existing properties. For Datapaths however dynamic attributes were enabled. Since the \verb|attrib| map is not being used in the xml export and import functionality we use the native Python dynamic attributes there.
+
+\section{XML Export}
+
+\subsection{Original Implemented Functionality}
+
+The base C++ implementation of \verb|sys_sage| includes XML export functionality, which traverses the topology and generates an XML representation of it. XML's hierarchical structure is well-suited for representing topologies, where the topology itself is the root node, cores and threads are leaf nodes, and various components reside in between.
+
+XML properties are utilized to represent default attributes such as \verb|id|, \verb|name|, \verb|type|, and type-bound memory attributes like \verb|size|. Datapaths are also included, with attributes like \verb|src|, \verb|target|, \verb|orientation|, \verb|latency|, and \verb|bandwidth|.
+
+Dynamic attributes, which users can add in C++, are represented as separate XML nodes:
+
+\begin{lstlisting}[language=xml, xleftmargin=4em, frame = single]
+<Attribute name="GPU_Clock_Rate">
+    <GPU_Clock_Rate frequency="2.000000" unit="MHz"/>
+</Attribute>
+\end{lstlisting}
+
+Since the \verb|attrib| map in C++ stores attributes as \verb|void*|, the XML export function requires user-defined functions to parse custom attribute types. Users can define up to two functions:
+
+\begin{lstlisting}[language=C++, xleftmargin=4em, frame = single]
+std::function<int(string,void*,string*)> search_custom_attrib_key_fcn;
+std::function<int(string,void*,xmlNodePtr)> search_custom_complex_attrib_key_fcn;
+\end{lstlisting}
+
+The first function returns a string representation of the attribute, while the second allows for creating more complex XML nodes. The export function can be called as follows:
+
+\begin{lstlisting}[language=C++, xleftmargin=4em, frame = single]
+exportToXml(
+    root, 
+    path, 
+    search_custom_attrib_key_fcn, 
+    search_custom_complex_attrib_key_fcn
+);
+\end{lstlisting}
+
+\subsection{Process Description}
+
+The Python implementation of \verb|exportToXml| mirrors the C++ functionality, allowing users to define custom parsing functions as in this example:
+
+\begin{lstlisting}[language=Python, xleftmargin=4em, frame = single]
+def search_custom(key: str, value) -> str:
+    if "example" in key:
+        return str(value)+"test"
+    return None
+
+def search_custom_complex(key: str, value) -> str:
+    return "<root><Attribute key=\"" + str(key) + "\" value=\"" + str(value) + "\"/><root>"
+\end{lstlisting}
+
+The \verb|key| is always a string, while \verb|value| can be any Python type. The return value must be a string, representing either a simple value or an XML node. XML parsing modules like \verb|xml.etree.ElementTree| can be used to construct complex XML nodes.
+
+The Python export function can be called as follows:
+
+\begin{lstlisting}[language=Python, xleftmargin=4em, frame = single]
+sys_sage.exportToXml(root, "out.xml", search_custom, search_custom_complex)
+\end{lstlisting}
+
+The Pybind bindings are defined as follows:
+
+\begin{lstlisting}[language=C++, xleftmargin=4em, frame = single]
+m.def("exportToXml", [](Component& root, string xmlPath, std::optional<py::function> print_att = std::nullopt, std::optional<py::function> print_catt = std::nullopt) {
+        if(print_att)
+            print_attributes = *print_att;
+        if(print_catt)
+            print_complex_attributes = *print_catt;
+        exportToXml(&root, xmlPath,print_att ? xmldumper : nullptr,print_catt ? xmldumper_complex : nullptr);
+    },py::arg("root"), py::arg("xmlPath") = "out.xml", py::arg("print_att") = py::none(), py::arg("print_catt") = py::none());
+\end{lstlisting}
+
+Global variables are used to store the user-defined functions. Two helper functions are used to translate between Python and C++ types. The helper functions implement the required functions for the XML-export function and they call the user-defined functions previously stored in the global variables to achieve the desired functionality. Default attributes are skipped, but this can be changed in the future.
+
+\subsection{Helper Functions}
+
+In the following we explain which steps are performed by the helper functions:
+
+\subsubsection{Simple Attributes}
+\begin{enumerate}
+\item Check if the attribute is a default attribute. If yes, skip it.
+\item Cast the \verb|void*| to a Python object.
+\item Call the user-defined Python function, passing the key and value (Python object).
+\item Cast the returned Python string to a C++ string.
+\item Store the string in the return string pointer.
+\end{enumerate}
+
+\subsubsection{Complex Attributes}
+
+Steps 1-3 are the same as for simple attributes, but the user-defined function is expected to return an XML node as a string. The string is then parsed and added to the XML node. For pasing the string returned by the user-defined function, \verb|xmlParseDoc| is used.
+
+\begin{lstlisting}[language=C++, xleftmargin=4em, frame = single]
+xmlDocPtr doc = xmlParseDoc((const xmlChar*)xml_str.c_str());
+xmlNodePtr root = xmlDocGetRootElement(doc);
+xmlAddChild(node,root->children);
+\end{lstlisting}
+
+\section{XML Import}
+
+The XML import function mirrors the XML export function, operating in reverse. This section provides a detailed explanation of the import function's inner workings, as it represents a new feature in the C++ base implementation.
+
+\subsection{Process Description}
+
+The XML import process involves the following steps:
+
+\begin{enumerate}
+    \item \textbf{Read XML File:} The function begins by reading the input XML file.
+    \item \textbf{Find Component and Datapath Nodes:} It then locates component and datapath nodes within the XML structure.
+    \item \textbf{Traverse Components:} The function recursively traverses all components, adding them to a map of addresses (obtained from the XML file) and newly created component instances.
+    \item \textbf{Attribute Collection:} Upon encountering an attribute node, the function calls an attribute collection routine. This routine attempts to parse attributes using the following order:
+        \begin{enumerate}
+            \item Custom function for simple attributes.
+            \item Default function for simple attributes.
+            \item Custom function for complex attributes.
+            \item Default function for complex attributes.
+        \end{enumerate}
+        If no parsing method succeeds, the attribute is omitted.
+    \item \textbf{Add Datapaths:} Datapaths are created by inspecting the component map, which stores components and their corresponding addresses from the XML file. This ensures correct connection of datapaths to the created components.
+    \item \textbf{Return Root Component:} The function returns the root component, which is of type Topology.
+\end{enumerate}
+
+\subsection{User-Defined Functions}
+
+Users can provide custom functions for attribute parsing:
+
+    \begin{lstlisting}[language=C++, xleftmargin=4em, frame = single]
+    std::function<void*(xmlNodePtr)> search_custom_attrib_key_fcn = NULL;
+    \end{lstlisting}
+    The function for simple attributes receives an \verb|xmlNodePtr| and returns a \verb|void*| to store the attribute value in the \verb|attrib_map|.
+
+    \begin{lstlisting}[language=C++, xleftmargin=4em, frame = single]
+    std::function<int(xmlNodePtr, Component *)> search_custom_complex_attrib_key_fcn = NULL;
+    \end{lstlisting}
+    The function for complex attributes receives an \verb|xmlNodePtr| and a pointer to the current component. It allows users to configure component properties directly via the \verb|attrib| map. The function returns 1 for success and 0 for failure.
+
+\subsection{Python Interface}
+
+Users can provide up to two functions in Python. Here is an example of how this can be done:
+
+\textbf{Simple Attributes:}
+    \begin{lstlisting}[language=Python, xleftmargin=4em, frame = single]
+    def search_custom(x : str):
+        if "example" in x:
+            y = x.split("value=\"")[-1]
+            return y.rstrip("\"/>")
+        else:
+            return None
+    \end{lstlisting}
+\textbf{Complex Attributes:}
+    \begin{lstlisting}[language=Python, xleftmargin=4em, frame = single]
+    def search_custom_complex(x : str,c : Component) -> int:
+        x = str(x)
+        m = re.search(r'<my_core_info\s+temperature="(\d*\.\d*)" temp_unit="(\w*)" frequency="(\d*)" freq_unit="(\w*)"/>', x)
+        if m:
+            my_core_info = {}
+            my_core_info["temperature"] = float(m.group(1))
+            my_core_info["temp_unit"] = m.group(2)
+            my_core_info["frequency"] = int(m.group(3))
+            my_core_info["freq_unit"] = m.group(4)
+            c["my_core_info"] = my_core_info
+            return 1
+        else:
+            return 0
+    \end{lstlisting}
+
+The \verb|importFromXml()| function can be called as follows:
+
+\begin{lstlisting}[language=Python, xleftmargin=4em, frame = single]
+sys_sage.importFromXml("in.xml", search_custom, search_custom_complex)
+\end{lstlisting}
+
+The corresponding Pybind bindings are:
+
+\begin{lstlisting}[language=C++, xleftmargin=4em, frame = single]
+m.def("importFromXml",[](string path, std::optional<py::function> search_custom_attrib_key_fcn = std::nullopt, std::optional<py::function> search_custom_complex_attrib_key_fcn = std::nullopt) {
+        if(search_custom_attrib_key_fcn)
+            read_attributes = *search_custom_attrib_key_fcn;
+        if(search_custom_complex_attrib_key_fcn)
+            read_complex_attributes = *search_custom_complex_attrib_key_fcn;
+        return importFromXml(path,search_custom_attrib_key_fcn ? xmlloader : nullptr, search_custom_complex_attrib_key_fcn ? xmlloader_complex : nullptr );
+    }, py::arg("path"), py::arg("search_custom_attrib_key_fcn") = py::none(), py::arg("search_custom_complex_attrib_key_fcn") = py::none());
+\end{lstlisting}
+
+Similiar to the export function, some global variables store the user-defined Python functions. Helper functions facilitate type conversion between Python and C++.
+
+\subsection{Helper Functions}
+
+\begin{enumerate}
+    \item \textbf{Function for simple attributes:}
+    \begin{enumerate}
+        \item Dump the XML node content to a string.
+        \item Cast the string to a Python string.
+        \item Call the user-defined Python function with the Python string.
+        \item Store the returned Python object in the \verb|attrib| map.
+    \end{enumerate}
+    \item \textbf{Function for complex attributes:}
+    \begin{enumerate}
+        \item Perform the same steps as for simple attributes.
+        \item Pass the current component to the Python function.
+        \item The Python function returns a success status (1 or 0).
+        \item The user has full control over component attribute configuration.
+    \end{enumerate}
+\end{enumerate}
