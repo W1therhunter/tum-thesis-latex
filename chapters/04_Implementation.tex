@@ -52,41 +52,7 @@ This structure is designed to provide a clear and organized layout, facilitating
 
 This structured approach ensures that the bindings are well-organized and easy to maintain, providing a solid foundation for the Python interface of the sys\_sage library.
 
-\section{Ownership Management and Return-Value Policies}
 
-A critical challenge in interfacing C++ with Python involves the management of object ownership, particularly concerning the \verb|Component| objects within the sys\_sage library. By default, pybind11 transfers ownership of the underlying C++ object to the Python side. This implies that when a Python object, such as \verb|c = sys_sage.Component()|, is created, Python assumes responsibility for its lifecycle, including reference counting and deallocation. While this approach is generally adequate for objects without external dependencies, it becomes problematic when dealing with interconnected components, such as parent-child relationships or datapath associations.
-
-Consider the following scenario:
-
-  \begin{lstlisting}[language=Python, xleftmargin=4em, frame = single]
-c = sys_sage.Component()
-child = sys_sage.Component(c) # Parent set in constructor
-del c
-d = child.parent
-print(d.id) # Undefined behaviour
-  \end{lstlisting}
-
-In this example, deleting \verb|c| in Python leads to the deallocation of the corresponding C++ object. However, the \verb|child| object retains a reference to the now-deleted parent. Consequently, accessing \verb|child.parent| results in undefined behavior, as the referenced object no longer exists. This issue arises because the \verb|Component| destructor does not update references in related objects, such as parent nodes, child nodes, or datapaths.
-
-An initial attempt to address this problem involved implementing a custom delete function, \verb|delete(bool withSubtree)|, to replace the default destructor. However, this approach was deemed unsuitable due to potential conflicts with Python's garbage collection mechanism. As noted in pybind11's documentation, overriding the \verb|__del__(self)| method in Python is strongly discouraged, as it can interfere with the garbage collection process. \cite[see Chapter 12]{python-gc}
-
-To mitigate these issues, pybind11's capability to disable ownership transfer was utilized. By modifying the template parameters of the \verb|py::class_<>| declaration, ownership of the C++ objects can be retained by the C++ side. Specifically, the \verb|std::unique_ptr<Component, py::nodelete>| template parameter was employed. The \verb|py::nodelete| keyword instructs pybind11 to prevent Python from deallocating the underlying C++ object. This ensures that the C++ side remains responsible for managing object lifetimes.
-
-However, this solution introduces a new challenge. The base C++ program provides methods for manually deleting objects, which, when exposed to Python, can lead to inconsistencies. For instance:
-\newpage
-  \begin{lstlisting}[language=Python, xleftmargin=4em, frame = single]
-import sys_sage
-
-c = sys_sage.Component()
-d = c
-c.Delete()
-d.Delete() #Segmentation Fault
-  \end{lstlisting}
-  
-
-In this scenario, deleting \verb|c| using the \verb|Delete()| method deallocates the C++ object, but the Python wrapper \verb|d| remains unaware of this change. Ideally, all references to the deleted object should be updated. Unfortunately, pybind11 does not provide a mechanism for automatically updating these references. While this scenario is relatively rare, it underscores the need for careful consideration of object deletion strategies.
-
-Furthermore, pybind11, by default, invokes the destructor of the underlying C++ object when the reference count reaches zero. To enhance consistency, modifying the destructor to update relevant references was considered. This would ensure that when a component is deleted, all related references are updated, preventing dangling pointers. However, this approach requires further testing to evaluate its feasibility and impact.
 \section{Object-Oriented Programming with pybind11}
 
 \subsection{Class Definitions}
@@ -94,7 +60,7 @@ Furthermore, pybind11, by default, invokes the destructor of the underlying C++ 
 Python and C++ both offer object-oriented programming. C++ differentiates between structs and classes, while Python primarily uses classes. pybind11 allows C++ structs as well as classes to be bound to act like Python classes.
 
 For each functionality, a table is provided for comparison.
-
+        
 \begin{table}[htbp]
 \centering
 \begin{tabular}{|l|l|}
@@ -538,7 +504,7 @@ c.dynamic = "attribute"
 c.dynamic # returns "attribute"
 \end{lstlisting}
 
-However, this approach conflicts with \verb|def_property()|, as overriding \verb|__setattr__| and \verb|__getattr__| breaks property functionality. Handling properties like \verb|name| or \verb|id| in custom setter and getter methods would work as well, but results in bloated code. Therefore, an alternative solution is considered. This approach uses the \verb|[]| operator to access attributes, overriding \verb|__getitem__| and \verb|__setitem__|.
+However, this approach conflicts with \verb|def_property()|. If we want to conntect the \verb|attrib| map to Python attributes we need to override the \verb|__setattr__| and \verb|__getattr__| methods, but this breaks property functionality. Handling properties like \verb|name| or \verb|id| in custom setter and getter methods, that we define would work as well, but results in bloated code. Therefore, an alternative solution is considered. This approach uses the \verb|[]| operator to access attributes, overriding \verb|__getitem__| and \verb|__setitem__|.
 
 \begin{lstlisting}[language=Python, xleftmargin=4em, frame = single]
 c = sys_sage.Component()
@@ -552,28 +518,51 @@ c["example"]            # calls __getitem__
 
 This solution avoids conflicts with other functions.
 
-The implementation in the bindings is as follows:
+% The implementation in the bindings is as follows:
 
-\begin{lstlisting}[language=C++, xleftmargin=4em, frame = single]
-.def("__setitem__", [](Component& self, const std::string& name, py::object value) {
-    set_attribute(self,name, value);
-})
-.def("__getitem__", [](Component& self, const std::string& name) {return get_attribute(self,name);
-})
-.def("__getitem__", [](Component& self, int pos) {
-    return get_attribute(self,pos);
-})
-.def("__delitem__", [](Component& self, const std::string& name) {remove_attribute(self,name);
-})
-\end{lstlisting}
+% \begin{lstlisting}[language=C++, xleftmargin=4em, frame = single]
+% .def("__setitem__", [](Component& self, const std::string& name, py::object value) {
+%     set_attribute(self,name, value);
+% })
+% .def("__getitem__", [](Component& self, const std::string& name) {return get_attribute(self,name);
+% })
+% .def("__getitem__", [](Component& self, int pos) {
+%     return get_attribute(self,pos);
+% })
+% .def("__delitem__", [](Component& self, const std::string& name) {remove_attribute(self,name);
+% })
+% \end{lstlisting}
 
-. Overloaded \verb|__getitem__| methods allow access by key and index. The following example demonstrates this:
+Overloaded \verb|__getitem__| methods allow access by key and index. The following example demonstrates this:
 
 \begin{lstlisting}[language=Python, xleftmargin=4em, frame = single]
 c["example"] = "test"
 c[0]  # returns "test" if "example" is the only custom attribute
 \end{lstlisting}
+In the Python implementation, accessing and modifying attributes is designed to be user-friendly. The getter and setter methods for attributes are implemented to handle Python objects of any type or default attributes. This abstraction allows users to interact with custom attributes without explicit type casting. For default attributes, users need to be aware of the corresponding Python types.
 
+In contrast, the C++ implementation requires more explicit memory management and type handling for attribute manipulation. The following code snippet illustrates the process of updating and retrieving an attribute in C++:
+
+\begin{lstlisting}[language=C++, xleftmargin=4em, frame = single]
+// Update Attribute
+std::string key = "example";
+if (c->attrib.find(key) != c->attrib.end()) {
+    std::string* oldValue = static_cast<std::string*>(c->attrib[key]);
+    delete oldValue; // Free the old value
+}
+std::string* newValue = new std::string("test"); // Allocate new value
+c->attrib[key] = static_cast<void*>(newValue); // Update the map
+
+// Retrieve Attribute
+if (c->attrib.find(key) != c->attrib.end()) {
+    std::string* retrievedValue = static_cast<std::string*>(c->attrib[key]);
+    std::cout << "Value: " << *retrievedValue << std::endl;
+} else {
+    std::cout << "Key not found." << std::endl;
+}
+\end{lstlisting}
+
+As demonstrated in the code, updating an attribute in C++ involves checking for the existence of the key, explicitly freeing the memory associated with the old value, allocating memory for the new value, and then updating the attribute map with a void pointer. Similarly, retrieving an attribute requires casting the void pointer back to the expected type after verifying the key's existence. This manual memory management and type casting in C++ contrasts with the more dynamic and implicit handling of attributes in the Python interface provided by Pybind11.
 In the following we briefly explain the helper functions that are used:
 
 The \verb|set_attribute| function examines default values, converts data to C++ types, encapsulates Python data types in shared pointers, and stores them in the \verb|attrib_map|. The \verb|get_attribute| function retrieves attributes using a key or an index and casts the \verb|void*| pointers to their appropriate types. The \verb|del_attribute| function removes attributes from the map.
@@ -628,7 +617,7 @@ def search_custom_complex(key: str, value) -> str:
     return "<root><Attribute key=\"" + str(key) + "\" value=\"" + str(value) + "\"/><root>"
 \end{lstlisting}
 
-The \verb|key| is always a string, while \verb|value| can be any Python type. The return value must be a string, representing either a simple value or an XML node. XML parsing modules like \verb|xml.etree.ElementTree| can be used to construct complex XML nodes.
+The \verb|key| is always a string, while \verb|value| can be any Python type. The return value must be a string, representing either a simple value or an XML node respectively. When creating the XML node string for complex attributes the target XML information is incapsulated in a tag that is ommitted in the parsing operation. XML parsing modules like \verb|xml.etree.ElementTree|\cite{xml-etree} can be used to construct complex XML nodes.
 
 The Python export function can be called as follows:
 
@@ -636,19 +625,19 @@ The Python export function can be called as follows:
 sys_sage.exportToXml(root, "out.xml", search_custom, search_custom_complex)
 \end{lstlisting}
 
-The Pybind bindings are defined as follows:
+% The Pybind bindings are defined as follows:
 
-\begin{lstlisting}[language=C++, xleftmargin=4em, frame = single]
-m.def("exportToXml", [](Component& root, string xmlPath, std::optional<py::function> print_att = std::nullopt, std::optional<py::function> print_catt = std::nullopt) {
-        if(print_att)
-            print_attributes = *print_att;
-        if(print_catt)
-            print_complex_attributes = *print_catt;
-        exportToXml(&root, xmlPath,print_att ? xmldumper : nullptr,print_catt ? xmldumper_complex : nullptr);
-    },py::arg("root"), py::arg("xmlPath") = "out.xml", py::arg("print_att") = py::none(), py::arg("print_catt") = py::none());
-\end{lstlisting}
+% \begin{lstlisting}[language=C++, xleftmargin=4em, frame = single]
+% m.def("exportToXml", [](Component& root, string xmlPath, std::optional<py::function> print_att = std::nullopt, std::optional<py::function> print_catt = std::nullopt) {
+%         if(print_att)
+%             print_attributes = *print_att;
+%         if(print_catt)
+%             print_complex_attributes = *print_catt;
+%         exportToXml(&root, xmlPath,print_att ? xmldumper : nullptr,print_catt ? xmldumper_complex : nullptr);
+%     },py::arg("root"), py::arg("xmlPath") = "out.xml", py::arg("print_att") = py::none(), py::arg("print_catt") = py::none());
+% \end{lstlisting}
 
-Global variables are used to store the user-defined functions. Two helper functions are used to translate between Python and C++ types. The helper functions implement the required functions for the XML-export function and they call the user-defined functions previously stored in the global variables to achieve the desired functionality. Default attributes are skipped, but this can be changed in the future.
+Global variables are used to store the user-defined functions. Two helper functions are used to translate between Python and C++ types. The helper functions implement the required functions with the correct signature for the XML-export function and within the helper functions the user-defined Python functions - previously stored in the global variables - are called to achieve the desired functionality. Default attributes are skipped, but this can be changed in the future.
 
 \subsection{Helper Functions}
 
@@ -664,14 +653,18 @@ In the following we explain which steps are performed by the helper functions:
 \end{enumerate}
 
 \subsubsection{Complex Attributes}
+\begin{enumerate}
+\item Follow steps 1-3 for simple attributes.
+\item Expect user-defined function to return XML node as a Python string.
+\item Convert Python string to C++ string.
+\item Parse the XML node using \verb|xmlParseDoc| \cite{libxml2-docu} and add it to the XML node.
+\end{enumerate}
 
-Steps 1-3 are the same as for simple attributes, but the user-defined function is expected to return an XML node as a string. The string is then parsed and added to the XML node. For pasing the string returned by the user-defined function, \verb|xmlParseDoc| is used.
-
-\begin{lstlisting}[language=C++, xleftmargin=4em, frame = single]
-xmlDocPtr doc = xmlParseDoc((const xmlChar*)xml_str.c_str());
-xmlNodePtr root = xmlDocGetRootElement(doc);
-xmlAddChild(node,root->children);
-\end{lstlisting}
+% \begin{lstlisting}[language=C++, xleftmargin=4em, frame = single]
+% xmlDocPtr doc = xmlParseDoc((const xmlChar*)xml_str.c_str());
+% xmlNodePtr root = xmlDocGetRootElement(doc);
+% xmlAddChild(node,root->children);
+% \end{lstlisting}
 
 \section{XML Import}
 
@@ -704,12 +697,22 @@ Users can provide custom functions for attribute parsing:
     \begin{lstlisting}[language=C++, xleftmargin=4em, frame = single]
     std::function<void*(xmlNodePtr)> search_custom_attrib_key_fcn = NULL;
     \end{lstlisting}
-    The function for simple attributes receives an \verb|xmlNodePtr| and returns a \verb|void*| to store the attribute value in the \verb|attrib_map|.
+    The function for simple attributes receives an \verb|xmlNodePtr| and returns a \verb|void*| to store the attribute value in the \verb|attrib| map.
 
     \begin{lstlisting}[language=C++, xleftmargin=4em, frame = single]
     std::function<int(xmlNodePtr, Component *)> search_custom_complex_attrib_key_fcn = NULL;
     \end{lstlisting}
-    The function for complex attributes receives an \verb|xmlNodePtr| and a pointer to the current component. It allows users to configure component properties directly via the \verb|attrib| map. The function returns 1 for success and 0 for failure.
+    The function for complex attributes receives an \verb|xmlNodePtr| and a pointer to the current component. It allows users to configure component properties directly via the \verb|attrib| map. The function must return 1 for success and 0 for failure.
+
+    Similar to the export function the import function can be called like this:
+
+    \begin{lstlisting}[language=C++, xleftmargin=4em, frame = single]
+    Component* importFromXml(
+        path, 
+        search_custom_attrib_key_fcn, 
+        search_custom_complex_attrib_key_fcn
+    );
+    \end{lstlisting}
 
 \subsection{Python Interface}
 
@@ -724,6 +727,7 @@ Users can provide up to two functions in Python. Here is an example of how this 
         else:
             return None
     \end{lstlisting}
+
 \textbf{Complex Attributes:}
     \begin{lstlisting}[language=Python, xleftmargin=4em, frame = single]
     def search_custom_complex(x : str,c : Component) -> int:
@@ -747,35 +751,101 @@ The \verb|importFromXml()| function can be called as follows:
 sys_sage.importFromXml("in.xml", search_custom, search_custom_complex)
 \end{lstlisting}
 
-The corresponding Pybind bindings are:
+% The corresponding Pybind bindings are:
 
-\begin{lstlisting}[language=C++, xleftmargin=4em, frame = single]
-m.def("importFromXml",[](string path, std::optional<py::function> search_custom_attrib_key_fcn = std::nullopt, std::optional<py::function> search_custom_complex_attrib_key_fcn = std::nullopt) {
-        if(search_custom_attrib_key_fcn)
-            read_attributes = *search_custom_attrib_key_fcn;
-        if(search_custom_complex_attrib_key_fcn)
-            read_complex_attributes = *search_custom_complex_attrib_key_fcn;
-        return importFromXml(path,search_custom_attrib_key_fcn ? xmlloader : nullptr, search_custom_complex_attrib_key_fcn ? xmlloader_complex : nullptr );
-    }, py::arg("path"), py::arg("search_custom_attrib_key_fcn") = py::none(), py::arg("search_custom_complex_attrib_key_fcn") = py::none());
-\end{lstlisting}
+% \begin{lstlisting}[language=C++, xleftmargin=4em, frame = single]
+% m.def("importFromXml",[](string path, std::optional<py::function> search_custom_attrib_key_fcn = std::nullopt, std::optional<py::function> search_custom_complex_attrib_key_fcn = std::nullopt) {
+%         if(search_custom_attrib_key_fcn)
+%             read_attributes = *search_custom_attrib_key_fcn;
+%         if(search_custom_complex_attrib_key_fcn)
+%             read_complex_attributes = *search_custom_complex_attrib_key_fcn;
+%         return importFromXml(path,search_custom_attrib_key_fcn ? xmlloader : nullptr, search_custom_complex_attrib_key_fcn ? xmlloader_complex : nullptr );
+%     }, py::arg("path"), py::arg("search_custom_attrib_key_fcn") = py::none(), py::arg("search_custom_complex_attrib_key_fcn") = py::none());
+% \end{lstlisting}
 
-Similiar to the export function, some global variables store the user-defined Python functions. Helper functions facilitate type conversion between Python and C++.
+We've already seen this approach in the export function,  where some global variables store the user-defined Python functions. Helper functions facilitate type conversion between Python and C++. In the next section the exact steps followed in these helper functions are explained.
 
 \subsection{Helper Functions}
-
-\begin{enumerate}
-    \item \textbf{Function for simple attributes:}
+\textbf{Simple attributes:}
     \begin{enumerate}
         \item Dump the XML node content to a string.
         \item Cast the string to a Python string.
         \item Call the user-defined Python function with the Python string.
         \item Store the returned Python object in the \verb|attrib| map.
     \end{enumerate}
-    \item \textbf{Function for complex attributes:}
+    \textbf{Complex attributes:}
     \begin{enumerate}
-        \item Perform the same steps as for simple attributes.
-        \item Pass the current component to the Python function.
+        \item Perform the same 2 steps as for simple attributes.
+        \item Pass the string and the current component to the Python function.
         \item The Python function returns a success status (1 or 0).
-        \item The user has full control over component attribute configuration.
     \end{enumerate}
-\end{enumerate}
+
+Same as in export functionality we need the helper functions to implement the required functions with the proper signature. It is safe to say, that the import functionality gives the user more power, as he can directly access the component. 
+
+\begin{figure}[htpb]
+    \centering
+    \includegraphics[width=\textwidth]{figures/XML_import-flowchart.png}
+    \caption{XML Import Flowchart}
+    \label{fig:xml-import}
+\end{figure}
+
+\begin{figure}[htpb]
+    \centering
+    \includegraphics[width=\textwidth]{figures/Attribute_from_xml.png}
+    \caption{Attribute parsing}
+    \label{fig:Attribute parsing}
+\end{figure}
+\newpage
+\section{Ownership Management and Return-Value Policies}
+
+A critical challenge in interfacing C++ with Python involves the management of object ownership, particularly concerning the \verb|Component| objects within the sys\_sage library. By default, pybind11 transfers ownership of the underlying C++ object to the Python side. This implies that when a Python object, such as \verb|c = sys_sage.Component()|, is created, Python assumes responsibility for its lifecycle, including reference counting and deallocation. While this approach is generally adequate for objects without external dependencies, it becomes problematic when dealing with interconnected components, such as parent-child relationships or datapath associations.
+
+Consider the following scenario:
+
+  \begin{lstlisting}[language=Python, xleftmargin=4em, frame = single]
+c = sys_sage.Component()
+child = sys_sage.Component(c) # Parent set in constructor
+del c
+d = child.parent
+print(d.id) # Undefined behaviour
+  \end{lstlisting}
+
+In this example, deleting \verb|c| in Python leads to the deallocation of the corresponding C++ object. However, the \verb|child| object retains a reference to the now-deleted parent. Consequently, accessing \verb|child.parent| results in undefined behavior, as the referenced object no longer exists. This issue arises because the \verb|Component| destructor does not update references in related objects, such as parent nodes, child nodes, or datapaths.
+
+An initial attempt to address this problem involved implementing a custom delete function, \verb|delete(bool withSubtree)|, to replace the default destructor. However, this approach was deemed unsuitable due to potential conflicts with Python's garbage collection mechanism. As noted in pybind11's documentation, overriding the \verb|__del__(self)| method in Python is strongly discouraged, as it can interfere with the garbage collection process. \cite[see Chapter 12]{python-gc}
+
+To mitigate these issues, pybind11's capability to disable ownership transfer was utilized. By modifying the template parameters of the \verb|py::class_<>| declaration, ownership of the C++ objects can be retained by the C++ side. Specifically, the \verb|std::unique_ptr<Component, py::nodelete>| template parameter was employed. The \verb|py::nodelete| keyword instructs pybind11 to prevent Python from deallocating the underlying C++ object. This ensures that the C++ side remains responsible for managing object lifetimes.
+
+However, this solution introduces a new challenge. The base C++ program provides methods for manually deleting objects, which, when exposed to Python, can lead to inconsistencies. For instance:
+\newpage
+  \begin{lstlisting}[language=Python, xleftmargin=4em, frame = single]
+import sys_sage
+
+c = sys_sage.Component()
+d = c
+c.Delete()
+d.Delete() #Segmentation Fault
+  \end{lstlisting}
+  
+
+In this scenario, deleting \verb|c| using the \verb|Delete()| method deallocates the C++ object, but the Python wrapper \verb|d| remains unaware of this change. Ideally, all references to the deleted object should be updated. Unfortunately, pybind11 does not provide a mechanism for automatically updating these references. While this scenario is relatively rare, it underscores the need for careful consideration of object deletion strategies.
+
+As mentioned before, pybind11, by default, invokes the destructor of the underlying C++ object when the reference count reaches zero. To enhance consistency, modifying the destructor to update relevant references is considered. 
+
+\subsection{Destructor modifications}
+
+In the base implementation, the destructors remain untouched. Consequently, to free resources, the user must explicitly call the \verb|Delete| function. This function provides the option to also delete the subtree, encompassing all descendants of the component. Naturally, all Datapaths connected to the component are deleted in this process. However, the attributes stored in the \verb|attrib| map are not automatically deallocated. Typically, in most containers from the \ac{STL}, memory is freed upon destruction for all contained items except pointers \cite{cppreference-map-destructor}.
+
+As an alternative to the approach requiring explicit \verb|Delete| calls, thereby passing memory management to the C++ side, we now examine a solution utilizing custom destructors for the Component and Datapath classes. The following illustration, Figure \ref{fig:topo-example}, may help to grasp the details:
+\begin{figure}[htpb]
+    \centering
+    \includegraphics[scale=0.5]{figures/Topo-example.png}
+    \caption{Topology Example}
+    \label{fig:topo-example}
+\end{figure}
+
+To remove the "Parent" in this Topology, we no longer call the \verb|Delete| method. Instead, \verb|delete Parent| is used. In this solution, the Destructor removes all Datapaths connected to the Component. Additionally, Child 1 and 2, as well as the Grandparent, are updated: the children's \verb|parent| values are set to \texttt{NULL}, and Parent is removed from the Grandparent's children list. The children are no longer directly connected to their grandparent and can only be reached if a Datapath to another component remains. In our case, Child 1 becomes unreachable, as its only two connections — once in the Parent's children list and once via the Datapath to Parent — are destroyed with the deletion of Parent. This might also cause memory leaks if components fall out of scope without any remaining connection to the rest of the topology. Therefore, the user should always consider calling the \verb|DeleteSubtree| method beforehand, which has slight modifications compared to the base implementation but effectively achieves the same outcome.
+
+The Datapath's destructor is also modified. Essentially, the logic behind the \verb|DeleteDatapath| method is migrated to the destructor.
+
+The solution presented in this section is cleaner and allows for seamless usage of the pybind11 binding, enabling the Python interpreter to manage memory deallocation.

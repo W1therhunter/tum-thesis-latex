@@ -44,43 +44,77 @@ Furthermore we provided some sketches that show which steps are involved to use 
 
 \subsubsection{ctypes: Direct Library Interaction}
 
-ctypes enables Python to directly interface with dynamic link libraries, providing access to C-compatible data types and functions. While straightforward for basic C interactions, it necessitates manual type conversions and lacks native support for C++ object-oriented features. This can complicate the wrapping of libraries with complex C++ structures and inheritance.
+ctypes enables Python to directly interface with dynamic link libraries, providing access to C-compatible data types and functions. While straightforward for basic C interactions, it necessitates manual type conversions and lacks native support for C++ object-oriented features. This can complicate the wrapping of libraries with complex C++ structures and inheritance. \cite{ctypes-docu}
 
 \begin{figure}[htpb]
     \centering
-    \includegraphics[width=\textwidth]{figures/pybind_schema.png}
-    \caption{Pybind11 Schema}
-    \label{fig:pybind11-schema}
+    \includegraphics[width=\textwidth]{figures/Ctypes_schema.png}
+    \caption{ctypes Schema}
+    \label{fig:ctypes-schema}
 \end{figure}
 
 
 
 \subsubsection{Cython: Compiled Python Extensions}
 
-Cython allows for the compilation of Python-like code into optimized C, potentially yielding performance improvements. It is suitable for creating C extensions and bridging Python with external C libraries. However, its effectiveness in wrapping existing C++ libraries may vary, as it may not fully leverage the library's pre-existing design.
+Cython allows for the compilation of Python-like code into optimized C, potentially yielding performance improvements. It is suitable for creating C extensions and bridging Python with external C libraries. However, its effectiveness in wrapping existing C++ libraries may vary, as it may not fully leverage the library's pre-existing design. \cite{cython-docu}
+
+\begin{figure}[htpb]
+    \centering
+    \includegraphics[width=\textwidth]{figures/cython_schema.png}
+    \caption{Cython Schema}
+    \label{fig:cython-schema}
+\end{figure}
 
 \subsubsection{pybind11: Modern C++ Bindings}
 
-pybind11 is a header-only library designed to simplify the creation of Python bindings for C++ code. It leverages compile-time introspection to minimize boilerplate and offers robust support for modern C++ features, including templates and \ac{STL} data structures. Its design prioritizes ease of use and maintainability.
+pybind11 is a header-only library designed to simplify the creation of Python bindings for C++ code. It leverages compile-time introspection to minimize boilerplate and offers robust support for modern C++ features, including templates and \ac{STL} data structures. Its design prioritizes ease of use and maintainability. \cite {pybind11-docu}
+
+\begin{figure}[htpb]
+    \centering
+    \includegraphics[scale=0.5]{figures/pybind_schema.png}
+    \caption{Pybind11 Schema}
+    \label{fig:pybind11-schema}
+\end{figure}
 
 \subsubsection{SWIG: Multi-Language Interface Generation}
 
-SWIG is a tool capable of generating bindings for numerous programming languages. While it supports a broad range of C++ features, it introduces its own interface definition language, which may present a learning curve. Additionally, the necessity for manual type mappings can increase development effort.
+SWIG is a tool capable of generating bindings for numerous programming languages. While it supports a broad range of C++ features, it introduces its own interface definition language, which may present a learning curve. Additionally, the necessity for manual type mappings can increase development effort. \cite{swig-docu}
+
+\begin{figure}[htpb]
+    \centering
+    \includegraphics[width=\textwidth]{figures/swig_schema.png}
+    \caption{SWIG Schema}
+    \label{fig:swig-schema}
+\end{figure}
 
 \subsubsection{Py-C-API: Native Python Extensions}
 
-The Python/C API provides a direct mechanism for extending the Python interpreter with C or C++ modules. While offering high performance, it demands meticulous memory management and can result in less readable code. It is generally better suited for creating custom extensions than for wrapping existing libraries.
+The Python/C API provides a direct mechanism for extending the Python interpreter with C or C++ modules. While offering high performance, it demands meticulous memory management and can result in less readable code. It is generally better suited for creating custom extensions than for wrapping existing libraries. \cite{py-c-api}
+
+\begin{figure}[htpb]
+    \centering
+    \includegraphics[width=\textwidth]{figures/python-C-API_schema.png}
+    \caption{Python-C-API Schema}
+    \label{fig:py-c-api-schema}
+\end{figure}
 
 \subsubsection{Alternative Binding Tools}
 
-Other tools, such as Boost.Python and Cffi, offer alternative approaches. Boost.Python, while powerful, introduces complex installation process. Cffi, primarily designed for C, may not fully support the complexities of modern C++ libraries, particularly those utilizing modern C++ features.
+Other tools, such as Boost.Python and Cffi, offer alternative approaches. Boost.Python, while powerful, introduces complex installation process. Cffi, primarily designed for C, may not fully support the complexities of modern C++ libraries, particularly those utilizing modern C++ features. \cite{boost-docu} \cite{cffi-docu}
 \subsection{Performance Comparison}
 
 Performance is a critical consideration, especially for tasks involving searching and updating components in large topologies. The overhead associated with each technology, including function calls and type casting, must be evaluated.
 
 Initial tests involving file I/O operations indicate that Py-C-API offers the best performance, followed by pybind11 and SWIG. Python and Cython exhibit significantly lower performance due to the interpreter overhead.
 
+\input{figures/techs_bm.tex}
+
 Further benchmarks comparing SWIG and pybind11 for hierarchical component searches show that SWIG is generally faster, except when using smart pointers. However, pybind11's ease of use and maintainability outweigh the slight performance advantage of SWIG.
+
+\input{figures/swig_pybind.tex}
+\input{figures/swig_pybind_o3.tex}
+\input{figures/swig_pybind_sp.tex}
 
 
 \subsection{Technology Decision: pybind11 for Optimal Integration}

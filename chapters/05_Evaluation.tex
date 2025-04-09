@@ -27,7 +27,7 @@ It is important to acknowledge that precise benchmarking requires rigorous metho
 
 However, given the substantial performance disparities between Python and C++, the benchmarks presented herein provide a general overview. For use cases demanding high precision, adhering to established benchmarking standards is recommended.
 
-The goal of this section is to compare the Python and C++ implementations to provide insights into the performance trade-offs associated with each language.
+The goal of this section is to compare the Python and C++ implementations to provide insights into the performance trade-offs associated with each language. As presented in the \autoref{chapter:Implementation} we have two different solutions for the Python implementation of sys-sage. For the evaluation we will only consider the solution without destructor modifications.
 
 \subsubsection{Basic Functionality Performance}
 
@@ -81,3 +81,9 @@ Update Attribute & 4246 & 664 & 6.39 \\
 \end{center}
 
 Attribute retrieval is faster in C++, while attribute updates involve additional steps (key existence check, memory freeing), resulting in higher overhead.
+
+\subsection{Python implementation comparison with and without destructor modifications}
+
+In \autoref{chapter:Implementation}, certain limitations of the initial implementation were discussed, particularly the lack of Python's ownership over created objects. The primary concerns involve potential memory leaks and an increased burden on the user, which deviates from typical Python application paradigms.
+
+Consequently, an alternative approach employing modified destructors was explored to enable the Python interpreter to effectively manage memory deallocation. This obviates the need for manual object deletion by the user. However, this strategy introduces a potential issue: objects might be inadvertently deleted if they fall out of scope prematurely, even if they should persist within the topology. This scenario is most likely to occur when parsers are used to construct the topology, but the created objects are not subsequently registered on the Python side. In most practical use cases, objects are registered as soon as a function is called to retrieve a component from the topology. While this specific problem warrants future attention, the overall approach of utilizing modified destructors appears more promising for seamless integration with Python's memory management.
