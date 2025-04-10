@@ -72,20 +72,9 @@ pybind11 is a header-only library designed to simplify the creation of Python bi
 
 \begin{figure}[htpb]
     \centering
-    \includegraphics[scale=0.5]{figures/pybind_schema.png}
+    \includegraphics[width=\textwidth]{figures/pybind_schema.png}
     \caption{Pybind11 Schema}
     \label{fig:pybind11-schema}
-\end{figure}
-
-\subsubsection{SWIG: Multi-Language Interface Generation}
-
-SWIG is a tool capable of generating bindings for numerous programming languages. While it supports a broad range of C++ features, it introduces its own interface definition language, which may present a learning curve. Additionally, the necessity for manual type mappings can increase development effort. \cite{swig-docu}
-
-\begin{figure}[htpb]
-    \centering
-    \includegraphics[width=\textwidth]{figures/swig_schema.png}
-    \caption{SWIG Schema}
-    \label{fig:swig-schema}
 \end{figure}
 
 \subsubsection{Py-C-API: Native Python Extensions}
@@ -99,18 +88,34 @@ The Python/C API provides a direct mechanism for extending the Python interprete
     \label{fig:py-c-api-schema}
 \end{figure}
 
+\subsubsection{SWIG: Multi-Language Interface Generation}
+
+SWIG is a tool capable of generating bindings for numerous programming languages. While it supports a broad range of C++ features, it introduces its own interface definition language, which may present a learning curve. Additionally, the necessity for manual type mappings can increase development effort. \cite{swig-docu}
+
+\begin{figure}[htpb]
+    \centering
+    \includegraphics[scale=0.6]{figures/swig_schema.png}
+    \caption{SWIG Schema}
+    \label{fig:swig-schema}
+\end{figure}
+
+
 \subsubsection{Alternative Binding Tools}
 
 Other tools, such as Boost.Python and Cffi, offer alternative approaches. Boost.Python, while powerful, introduces complex installation process. Cffi, primarily designed for C, may not fully support the complexities of modern C++ libraries, particularly those utilizing modern C++ features. \cite{boost-docu} \cite{cffi-docu}
 \subsection{Performance Comparison}
 
-Performance is a critical consideration, especially for tasks involving searching and updating components in large topologies. The overhead associated with each technology, including function calls and type casting, must be evaluated.
+Performance is a critical consideration, especially for tasks involving searching and updating components in large topologies. The overhead associated with each technology, including function calls and type casting, must be evaluated. In the following benchmarks we repeat the task a million times and measure the time it takes.
 
 Initial tests involving file I/O operations indicate that Py-C-API offers the best performance, followed by pybind11 and SWIG. Python and Cython exhibit significantly lower performance due to the interpreter overhead.
 
 \input{figures/techs_bm.tex}
 
-Further benchmarks comparing SWIG and pybind11 for hierarchical component searches show that SWIG is generally faster, except when using smart pointers. However, pybind11's ease of use and maintainability outweigh the slight performance advantage of SWIG.
+The Python-C-API might be the optimal solution regarding performance, however, the documentation advises to better use a tool to simplify the process. \cite{py-c-api}
+
+Therefore we only compare the performance of pybind11 and SWIG. To do this we create a datastructure that mimics sys-sage's internal representation in a very basic way. We then measure the time to get an object from a hierarchy of objects. 
+
+The results show that SWIG is generally faster, except when using smart pointers. However, pybind11's ease of use and maintainability outweigh the slight performance advantage of SWIG.
 
 \input{figures/swig_pybind.tex}
 \input{figures/swig_pybind_o3.tex}

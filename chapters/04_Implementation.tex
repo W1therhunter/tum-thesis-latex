@@ -36,7 +36,7 @@ The Python bindings for the sys\_sage library are encapsulated within a dedicate
   \end{figure}
 
 
-This structure is designed to provide a clear and organized layout, facilitating easy navigation and modification of the bindings. The file is segmented into distinct sections, each serving a specific purpose:
+This structure is designed to provide a clear and organized layout, facilitating easy navigation and modification of the bindings. \cite[see The Basics/First Steps]{pybind11-docu} The file is segmented into distinct sections, each serving a specific purpose:
 
 \begin{itemize}
     \item   \textbf{Include Directives:} Essential header files, including those from pybind11 and the sys\_sage library, are included to provide the necessary functionalities.
@@ -57,7 +57,7 @@ This structured approach ensures that the bindings are well-organized and easy t
 
 \subsection{Class Definitions}
 
-Python and C++ both offer object-oriented programming. C++ differentiates between structs and classes, while Python primarily uses classes. pybind11 allows C++ structs as well as classes to be bound to act like Python classes.
+Python and C++ both offer object-oriented programming. C++ differentiates between structs and classes, while Python primarily uses classes. pybind11 allows C++ structs as well as classes to be bound to act like Python classes. \cite[see The Basics/Object-Oriented Code]{pybind11-docu}
 
 For each functionality, a table is provided for comparison.
         
@@ -80,19 +80,27 @@ py::class_<Component, std::unique_ptr<Component, py::nodelete>>(
 \end{lstlisting}
 \\ \hline
 \textbf{C++ usage} &
-\verb|Component;| \\ \hline
+\begin{lstlisting}[language=C++]
+    #include "sys-sage.hpp"
+    Component;
+\end{lstlisting}
+    \\ \hline
 \textbf{Python usage} &
-\verb|sys_sage.Component| \\ \hline
+\begin{lstlisting}[language=Python]
+    import sys_sage as sys_sage
+    sys_sage.Component
+    \end{lstlisting}
+    \\ \hline
 \end{tabular}
 \caption{Class Definition Comparison}
 \label{tab:class_definition}
 \end{table}
 
-Header files define classes. pybind bindings are defined in the binding file within the module. To use \verb|sys-sage| in C++, we need to include \verb|syssage.hpp| in the project. To use \verb|sys-sage| in Python, we need to include \verb|sys_sage|, where we can also rename the module.
+Header files define classes. pybind bindings are defined in the binding file within the module. To use \verb|sys-sage| in C++, we need to include \verb|syssage.hpp| in the project. To use \verb|sys-sage| in Python, we need to include \verb|sys_sage|, where we can also rename the module. 
 
-We can see that pybind bindings are straightforward. We use \verb|py::class_<T>| where \verb|T| is the template input, in this case, \verb|Component|. As mentioned in the previous chapter, for pybind to indicate that component objects should not be destroyed by Python, we use \verb|std::unique_ptr<T>| as holder type for the Component class, and we add a delete function, that is \verb|py::nodelete|. There are also other methods to define how Python should handle the underlying C++ objects.
+We can see that pybind bindings are straightforward. We use \verb|py::class_<T>| where \verb|T| is the template input, in this case, \verb|Component|. As mentioned in the previous chapter, for pybind to indicate that component objects should not be destroyed by Python, we use \verb|std::unique_ptr<T>| as holder type for the Component class, and we add a delete function, that is \verb|py::nodelete|. There are also other methods to define how Python should handle the underlying C++ objects. \cite[see The Basics/Object-Oriented Code]{pybind11-docu}
 
-The \verb|py::class_| takes the module, class name , and class documentation as arguments.
+The \verb|py::class_| takes the module, class name, and class documentation as arguments.
 
 %*TODO:* Improve Documentation. Helpful feature to add documentation to the project and help users understand usage better.
 
@@ -107,7 +115,7 @@ class Example(self):
         self.name = name
 \end{lstlisting}
 
-With pybind, we can take already defined Constructors of C++ implementation and can use the convenience function \verb|init<>()| that binds automatically the C++ Constructors.
+With pybind, we can take already defined Constructors of C++ implementation and can use the convenience function \verb|init<>()| that binds automatically the C++ Constructors. \cite[see The Basics/Object-Oriented Code]{pybind11-docu}
 
 \begin{table}[htbp]
 \centering
@@ -143,9 +151,9 @@ Component(
 
 C++ implementation provides a bunch of Constructors for Component-Class and Subclasses. In our use case, Pybind's convenience function is indeed convenient.
 
-For all functions and properties we want to bind to, we use \verb|.def(...)|. That also applies to initialization function, where we use the function \verb|py::init<T>()|. As one can see, this is a template function, and we replace \verb|T| with all the types of the Arguments there are defined in the C++ Constructor. In our example case, we have \verb|int|, \verb|string|, \verb|int| in this order.
+For all functions and properties we want to bind to, we use \verb|.def(...)|. That also applies to initialization function, where we use the function \verb|py::init<T>()|. As one can see, this is a template function, and we replace \verb|T| with all the types of the Arguments there are defined in the C++ Constructor. In our example case, we have \verb|int|, \verb|string|, \verb|int| in this order. \cite[see The Basics/Object-Oriented Code]{pybind11-docu}
 
-As in every definition of a function in the bindings, we can use \verb|py::arg| to not only define default values but also we can give the argument names for the documentation. In this case, this might look like this: \verb|py::arg("id") = 0|. Instead of this, there is also a shorthand notation that would look like this: \verb|"id"_a=0|. However, the literal operator must be made visible before with \verb|using namespace pybind11::literals|.
+As in every definition of a function in the bindings, we can use \verb|py::arg| to not only define default values but also we can give the argument names for the documentation. In this case, this might look like this: \verb|py::arg("id") = 0|. Instead of this, there is also a shorthand notation that would look like this: \verb|"id"_a=0|. However, the literal operator must be made visible before with \verb|using namespace pybind11::literals|. \cite[see Advanced Topics/Functions]{pybind11-docu}
 \begin{lstlisting}[language=C++, xleftmargin=4em, frame = single]
             // Component-constructor without parent
             .def(
@@ -218,7 +226,7 @@ t.GetId();  // t is Topology, but can access Component's
 \label{tab:inheritance}
 \end{table}
 
-The super-class is given as input in the template of \verb|py::class_<>|. Pybind will automatically care that all the functions and attributes from the super class are accessible to the Subclass. Multiple inheritance is also allowed. This is not yet needed but maybe in the future.
+The super-class is given as input in the template of \verb|py::class_<>|. Pybind will automatically care that all the functions and attributes from the super class are accessible to the Subclass. Multiple inheritance is also allowed. This is not yet needed but maybe in the future. \cite[see The Basics/Object-Oriented Code]{pybind11-docu}
 
 \subsection{Functions}
 
@@ -253,7 +261,7 @@ void Component::InsertChild(Component * child){
 \label{tab:function}
 \end{table}
 
-In \verb|.def()|, the first argument is the name of the method. Normally in Python, the convention is to use snake-case for the method-name. In this case, we use the same name as in the C++ implementation. For some other specific methods, we use more simple names, but more on this in the “Attribute”-Section. The next argument is the C++ function to bind, and the last argument is the argument name for the function. This is not necessary, but it helps for documentation and allows usage of keyword arguments.
+In \verb|.def()|, the first argument is the name of the method. Normally in Python, the convention is to use snake-case for the method-name. In this case, we use the same name as in the C++ implementation. For some other specific methods, we use more simple names, but more on this in the “Attribute”-Section. The next argument is the C++ function to bind, and the last argument is the argument name for the function. This is not necessary, but it helps for documentation and allows usage of keyword arguments. \cite[see Advanced Topics/Functions]{pybind11-docu}
 
 \subsection{Overloaded methods}
 
@@ -306,7 +314,7 @@ c.PrintSubtree(0)
 \label{tab:overloaded_methods}
 \end{table}
 
-The only difference to “normal” binding is that with overloading, we add the method signature, which is in this case \verb|void (Component::) ()| and \verb|void (Component::) (int)| respectively, which we add before \verb|&Component::PrintSubtree|.
+The only difference to “normal” binding is that with overloading, we add the method signature, which is in this case \verb|void (Component::) ()| and \verb|void (Component::) (int)| respectively, which we add before \verb|&Component::PrintSubtree|. \cite[see The Basics/Object-Oriented Code]{pybind11-docu}
 
 %*TODO:* Maybe add more?
 
@@ -378,7 +386,7 @@ m.def(
 \label{tab:module_functions}
 \end{table}
 
-So this is quite similar to the class methods, but here we assign the function to the module interface object \verb|m|.
+So this is quite similar to the class methods, but here we assign the function to the module interface object \verb|m|.\cite[see Reference/Conveneince Classes for specific Python types]{pybind11-docu}
 \newpage
 
 
@@ -407,7 +415,7 @@ m.attr("COMPONENT_NONE") = SYS_SAGE_COMPONENT_NONE;
 \label{tab:module_attributes}
 \end{table}
 
-In C++, these macros are preprocessed and replaced with their corresponding integer values. In Python, they are treated as exported variables, registered using the \verb|attr| function, effectively making them module attributes. Pybind handles the necessary type casting, as all macros resolve to integers.
+In C++, these macros are preprocessed and replaced with their corresponding integer values. In Python, they are treated as exported variables, registered using the \verb|attr| function, effectively making them module attributes. Pybind handles the necessary type casting, as all macros resolve to integers.\cite[see The Basics/First Steps]{pybind11-docu}
 
 A naming convention is employed where the “SYS\_SAGE” prefix is omitted from the Python attribute names to avoid redundancy. As demonstrated in the example, the attributes are accessed via \verb|sys_sage.COMPONENT_NONE|.
 %TODO Add acronym
@@ -415,7 +423,7 @@ A significant advantage of the Python implementation is its enhanced documentati
 
 \subsection{Properties (Default Attributes)}
 
-In C++, class attributes are typically private and accessed through setter and getter methods. However, this pattern is not idiomatic in Python. Pybind offers the \verb|def_property| function to bind setter and getter methods to Python properties, providing a more natural syntax.
+In C++, class attributes are typically private and accessed through setter and getter methods. However, this pattern is not idiomatic in Python. Pybind offers the \verb|def_property| function to bind setter and getter methods to Python properties, providing a more natural syntax. \cite[see The Basics/Object-Oriented Code]{pybind11-docu}
 
 \begin{table}[htbp]
 \centering
@@ -446,7 +454,7 @@ c.name = "name"
 \label{tab:properties}
 \end{table}
 \newpage
-This syntax is more intuitive for Python users. Pybind also provides \verb|def_property_readonly| for read-only properties, such as the \verb|id| attribute.
+This syntax is more intuitive for Python users. Pybind also provides \verb|def_property_readonly| for read-only properties, such as the \verb|id| attribute.\cite[see The Basics/Object-Oriented Code]{pybind11-docu}
 
 \begin{table}[htbp]
 \centering
@@ -490,7 +498,7 @@ This behavior is desirable for \verb|sys_sage| components and datapaths, especia
 
 The \verb|attrib| map offers high flexibility and performance by storing \verb|void*| pointers with string keys. This allows for storing both C++ types for the default attributes and Python types for custom attributes. Users should be able to modify these attributes, mirroring the C++ base implementation.
 
-There are multiple possibilities to connect the \verb|attrib| map to Python attributes. For example, Pybind can activate Python's native dynamic attribute functionality using \verb|py::dynamic_attr()|.
+There are multiple possibilities to connect the \verb|attrib| map to Python attributes. For example, Pybind can activate Python's native dynamic attribute functionality using \verb|py::dynamic_attr()|. \cite[see The Basics/Object-Oriented Code]{pybind11-docu}
 
 \begin{lstlisting}[language=C++, xleftmargin=4em, frame = single]
 py::class_<Component, std::unique_ptr<Component, py::nodelete>>(m, "Component", py::dynamic_attr(),"Generic Component");
@@ -504,7 +512,7 @@ c.dynamic = "attribute"
 c.dynamic # returns "attribute"
 \end{lstlisting}
 
-However, this approach conflicts with \verb|def_property()|. If we want to conntect the \verb|attrib| map to Python attributes we need to override the \verb|__setattr__| and \verb|__getattr__| methods, but this breaks property functionality. Handling properties like \verb|name| or \verb|id| in custom setter and getter methods, that we define would work as well, but results in bloated code. Therefore, an alternative solution is considered. This approach uses the \verb|[]| operator to access attributes, overriding \verb|__getitem__| and \verb|__setitem__|.
+However, this approach conflicts with \verb|def_property()|. If we want to conntect the \verb|attrib| map to Python attributes we need to override the \verb|__setattr__| and \verb|__getattr__| methods, but this breaks property functionality. Handling properties like \verb|name| or \verb|id| in custom setter and getter methods, that we define would work as well, but results in bloated code. Therefore, an alternative solution is considered. This approach uses the \verb|[]| operator to access attributes, overriding \verb|__getitem__| and \verb|__setitem__|.\cite[see Reference/Convenience classes for arbitrary Python Types]{pybind11-docu}\cite{python-getitem}
 
 \begin{lstlisting}[language=Python, xleftmargin=4em, frame = single]
 c = sys_sage.Component()
@@ -562,7 +570,9 @@ if (c->attrib.find(key) != c->attrib.end()) {
 }
 \end{lstlisting}
 
-As demonstrated in the code, updating an attribute in C++ involves checking for the existence of the key, explicitly freeing the memory associated with the old value, allocating memory for the new value, and then updating the attribute map with a void pointer. Similarly, retrieving an attribute requires casting the void pointer back to the expected type after verifying the key's existence. This manual memory management and type casting in C++ contrasts with the more dynamic and implicit handling of attributes in the Python interface provided by Pybind11.
+As demonstrated in the code, updating an attribute in C++ involves checking for the existence of the key, explicitly freeing the memory associated with the old value, allocating memory for the new value, and then updating the attribute map with a void pointer. Similarly, retrieving an attribute requires casting the void pointer back to the expected type after verifying the key's existence.\cite{sys-sage-docu} 
+
+This manual memory management and type casting in C++ contrasts with the more dynamic and implicit handling of attributes in the Python interface provided by Pybind11.
 In the following we briefly explain the helper functions that are used:
 
 The \verb|set_attribute| function examines default values, converts data to C++ types, encapsulates Python data types in shared pointers, and stores them in the \verb|attrib_map|. The \verb|get_attribute| function retrieves attributes using a key or an index and casts the \verb|void*| pointers to their appropriate types. The \verb|del_attribute| function removes attributes from the map.
