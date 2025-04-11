@@ -9,7 +9,7 @@ First we want to revisit the requirements of the Python implementation of sys-sa
 The Python solution mirrors the C++ implementation, encompassing nearly all functionalities. The only current limitation is the handling of overloaded methods, that accept a list of components as arguments. In that case the user must use the alternative method. 
 \begin{lstlisting}[language=Python, xleftmargin=4em, frame = single]
     c.GetAllChildrenByType(children_list, type) # this won't work
-    # do this instead 
+    # we can do this instead 
     children_list += c.GetAllChildrenByType(type)
     \end{lstlisting}
 
@@ -29,21 +29,28 @@ Pybind11 is a well-established tool for creating bindings, supported by an activ
 
 The Python interface offers a more user-friendly experience, enabling rapid prototyping and testing. For example, scheduling processes on HPC systems can be quickly prototyped and analyzed using Python scripts. If performance becomes a bottleneck, the solution can be transitioned to C++ for optimal execution. Memory management, however, requires careful attention, as users must manually manage subtree deletion to avoid undefined behavior. This work presents improvements to destructors, though memory management remains a complex aspect.
 
+The repository of the base implementation of \texttt{sys-sage} comes with some examples, which almost all of them could be easily translated to Python.
+
+For he XML import function we provided an additional test file, to show that this new feature is fully functional. 
+
+The evaluation would be incomplete without a comparison of the Python and C++ implementations in terms of performance. That's why we now take a look at some benchmarks.
+
 \subsection{Performance Benchmarking}
 
 \subsubsection{Setup and Methodology}
 
-To evaluate performance, C++ benchmarks utilize the high-resolution clock, while Python benchmarks employ the \texttt{timeit} module. The testing environment consisted of an Arch Linux system with an Intel i7-9750H CPU and 15GB of RAM.
+To evaluate performance, C++ benchmarks utilize the high-resolution clock, while Python benchmarks employ the \texttt{timeit} module. The testing environment consisted of an Arch Linux system with an Intel i7-9750H CPU and 15GB of RAM. \cite{python-timeit-docu}
 
 It is important to acknowledge that precise benchmarking requires rigorous methodology, including accurate resource measurement, reliable process termination, deliberate core assignment, consideration of non-uniform memory access, avoidance of swapping, and isolation of individual runs. \cite{beyer2019reliable}
 
 However, given the substantial performance disparities between Python and C++, the benchmarks presented herein provide a general overview. For use cases demanding high precision, adhering to established benchmarking standards is recommended.
 
-The goal of this section is to compare the Python and C++ implementations to provide insights into the performance trade-offs associated with each language. As presented in the \autoref{chapter:Implementation} we have two different solutions for the Python implementation of sys-sage. For the evaluation we will only consider the solution without destructor modifications.
+The goal of this section is to compare the Python and C++ implementations to provide insights into the performance trade-offs associated with each language. As presented in the \autoref{chapter:Implementation} we have two different solutions for the Python implementation of sys-sage. For the performanceevaluation we will only consider the solution without destructor modifications.
 
 \subsubsection{Basic Functionality Performance}
 
-\begin{center}
+\begin{figure}[htpb]
+    \centering
 \begin{tabular}{lrrr}
 \textbf{Function} & \textbf{Python (ns)} & \textbf{C++ (ns)} & \textbf{Factor} \\
 \hline
@@ -56,13 +63,16 @@ Getting all components & 39845198 & 470893 & 84.62 \\
 Getting numa max bw & 30936 & 70 & 441.94 \\
 Creating new component & 17054 & 364 & 46.85 \\
 \end{tabular}
-\end{center}
+\label{tab:Basic functionality performance}
+\caption{Basic functionality performance}
+\end{figure}
 
 The results indicate that parsing functions exhibit comparable performance. However, get operations, particularly retrieving all components, are significantly slower in Python due to the overhead of converting \texttt{std::vector} to Python lists. Creating new components is also considerably more expensive in Python, attributed to the inherent overhead of wrapping C++ objects for Python. The benchmarks to get the datapath with the max bandwidth from a component, which involves additional logic beyond a simple API call, demonstrates a substantial performance difference, highlighting the cost of loops in Python.
 
 \subsubsection{XML Import and Export Performance}
 
-\begin{center}
+\begin{figure}[htpb]
+    \centering
 \begin{tabular}{lrrr}
 \textbf{Function} & \textbf{Python (ns)} & \textbf{C++ (ns)} & \textbf{Factor} \\
 \hline
@@ -77,20 +87,25 @@ Only simple & 175346 & 50376 & 3.48 \\
 Only complex & 225953 & 50914 & 4.44 \\
 None & 163335 & 51095 & 3.20 \\
 \end{tabular}
-\end{center}
+\label{tab:XML import and export performance}
+\caption{XML Import and Export Performance}
+\end{figure}
 
 The XML import and export benchmarks, conducted with two components, where one of them has two attributes (one simple, one complex), reveal that the Python implementation with only complex attribute user functions is more costly. The C++ implementation, which directly writes to \texttt{xmlNodePtr}, is faster than the Python counterpart, which involves string conversions and parsing.
 
 \subsubsection{Attribute Access Performance}
 
-\begin{center}
+\begin{figure}[htpb]
+    \centering
 \begin{tabular}{lrrr}
 \textbf{Operation} & \textbf{Python (ns)} & \textbf{C++ (ns)} & \textbf{Factor} \\
 \hline
 Retrieve Attribute & 4054 & 182 & 22.28 \\
 Update Attribute & 4246 & 664 & 6.39 \\
 \end{tabular}
-\end{center}
+\label{tab:Attribute access performance}
+\caption{Attribute Access Performance}
+\end{figure}
 
 Attribute retrieval is faster in C++, while attribute updates involve additional steps (key existence check, memory freeing), resulting in higher overhead.
 
