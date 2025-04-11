@@ -1,6 +1,6 @@
 \chapter{Related Work}\label{chapter:Related Work}
 
-\section{Using Pybind11 with OpenFOAM}\label{sec:using-pybind11-in-openfoam} 
+\section{Using pybind11 with OpenFOAM}\label{sec:using-pybind11-in-openfoam} 
 
 OpenFOAM is a popular software package used for Computational Fluid Dynamics (CFD). A growing need exists to integrate Python-based machine learning with C++-based OpenFOAM, but current methods require translating Python code or models, which complicates development. \cite{rw-openfoam-website}
 
@@ -16,7 +16,7 @@ The benchmark evaluates the performance overhead of these tools, focusing on fun
 
 The results highlight the performance differences between the tools, with manually created or static bindings generally exhibiting better performance, while runtime bindings and pybind11 show more overhead. Notably, the study also reveals that minimizing C++/Python interoperability, such as through single, comprehensive function calls, yields the best performance, regardless of the binding tool. \cite{rw-benchmarks}
 
-\section{Using Pybind11 to create a python wrapper for homomorphic encryption}
+\section{Using pybind11 to create a python wrapper for homomorphic encryption}
 
 Alexander J. Titus and Shashwat Kishore introduced PySEAL, a Python wrapper for the SEAL homomorphic encryption library, which is implemented in C++. Homomorphic encryption allows operations on encrypted data, a technique with growing applications in bioinformatics for data privacy. 
 

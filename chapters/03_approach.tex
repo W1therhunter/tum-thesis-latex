@@ -7,15 +7,15 @@ To determine the most suitable solution, a comprehensive requirement analysis is
 
 \subsubsection{Library Complexity}
 
-The sys\_sage library, as outlined in the terminology section, exhibits significant complexity, encompassing a multitude of functions. Many of these functions are designed to modify object states and retrieve information about components or the overall topology. The mapping of basic C++ data types to their Python counterparts should be straightforward. Components and Datapaths feature attribute maps, enabling the addition of custom attributes. It is crucial that these attribute maps are accessible from Python, allowing users to define and manipulate custom attributes.
+The sys-sage library, as outlined in the terminology section, exhibits significant complexity, encompassing a multitude of functions. Many of these functions are designed to modify object states and retrieve information about components or the overall topology. The mapping of basic C++ data types to their Python counterparts should be straightforward. Components and Datapaths feature attribute maps, enabling the addition of custom attributes. It is crucial that these attribute maps are accessible from Python, allowing users to define and manipulate custom attributes.
 
-The library also manages horizontal and vertical connections through component parent-child relationships and datapath source-target relationships. The Python implementation must handle all objects with precision, mirroring the execution behavior of the C++ functions. Sys\_sage employs inheritance, with classes like Topology inheriting from the generic Component class. While Python supports inheritance, the integration of inheritance and polymorphism requires careful consideration to avoid potential workarounds. This aspect will be addressed in this work, particularly concerning the generalization of the Datapaths class to accommodate future specific Datapaths types.
+The library also manages horizontal and vertical connections through component parent-child relationships and datapath source-target relationships. The Python implementation must handle all objects with precision, mirroring the execution behavior of the C++ functions. sys-sage employs inheritance, with classes like Topology inheriting from the generic Component class. While Python supports inheritance, the integration of inheritance and polymorphism requires careful consideration to avoid potential workarounds. This aspect will be addressed in this work, particularly concerning the generalization of the Datapaths class to accommodate future specific Datapaths types.
 
-Sys\_sage supports up to three external interfaces: intel\_pqos, nvidia\_mig, and proc\_cpuinfo. The Python bindings should allow users to utilize these interfaces when available and desired. Additionally, sys\_sage provides XML import and export functionality, enabling users to customize attribute import and export processes.
+sys-sage supports up to three external interfaces: intel\_pqos, nvidia\_mig, and proc\_cpuinfo. The Python bindings should allow users to utilize these interfaces when available and desired. Additionally, sys-sage provides XML import and export functionality, enabling users to customize attribute import and export processes.
 
 \subsubsection{Performance}
 
-The most computationally intensive tasks involve searching and updating components within the topology. The time required for these operations increases with the size of the component. To minimize overhead, the Python bindings should primarily rely on the existing C++ functions, avoiding reimplementation in Python.
+The most computationally intensive tasks involve searching and updating components within the topology. The time required for these operations increases with the size of the topology. To minimize overhead, the Python bindings should primarily rely on the existing C++ functions, avoiding reimplementation in Python.
 
 \subsubsection{Library Dependency}
 
@@ -37,10 +37,12 @@ Users should have the option to install the library with or without Python acces
 
 Python programmers, who may not be accustomed to the intricacies of C++ programming, require an interface that is intuitive and robust. The bindings must prevent errors arising from misuse, such as segmentation faults, by providing clear error messages and idiot-proof functions.
 
+Now that we have our requirements defined we can take a look at the different technologies to reach set goals.
+
 \subsection{Technology Evaluation for Python Integration}
 
 Several technologies were considered for their potential to facilitate the integration of our C++ library with Python. Each option presents a unique set of features and trade-offs concerning performance, ease of implementation, and compatibility with modern C++ constructs.
-Furthermore we provided some sketches that show which steps are involved to use the technologies in a project. These illustrations should only give a rough idea behind the application of the different options.
+Furthermore we provided some sketches that show which steps are generally involved to use the technologies in a project. These illustrations should only give a rough idea behind the application of the different options and their complexity.
 
 \subsubsection{ctypes: Direct Library Interaction}
 
@@ -73,7 +75,7 @@ pybind11 is a header-only library designed to simplify the creation of Python bi
 \begin{figure}[htpb]
     \centering
     \includegraphics[width=\textwidth]{figures/pybind_schema.png}
-    \caption{Pybind11 Schema}
+    \caption{pybind11 Schema}
     \label{fig:pybind11-schema}
 \end{figure}
 
@@ -103,6 +105,9 @@ SWIG is a tool capable of generating bindings for numerous programming languages
 \subsubsection{Alternative Binding Tools}
 
 Other tools, such as Boost.Python and Cffi, offer alternative approaches. Boost.Python, while powerful, introduces complex installation process. Cffi, primarily designed for C, may not fully support the complexities of modern C++ libraries, particularly those utilizing modern C++ features. \cite{boost-docu} \cite{cffi-docu}
+
+As we can see there are plenty of technologies to integrate C++ in Python, using different approaches. Checking the performance of these tools is our next step to narrow down our choice.
+
 \subsection{Performance Comparison}
 
 Performance is a critical consideration, especially for tasks involving searching and updating components in large topologies. The overhead associated with each technology, including function calls and type casting, must be evaluated. In the following benchmarks we repeat the task a million times and measure the time it takes.
@@ -111,23 +116,24 @@ Initial tests involving file I/O operations indicate that Py-C-API offers the be
 
 \input{figures/techs_bm.tex}
 
-The Python-C-API might be the optimal solution regarding performance, however, the documentation advises to better use a tool to simplify the process. \cite{py-c-api}
+The Python-C-API might be the optimal solution regarding performance, however, the documentation advises to better use a third party tool to simplify the process. \cite{py-c-api}
 
 Therefore we only compare the performance of pybind11 and SWIG. To do this we create a datastructure that mimics sys-sage's internal representation in a very basic way. We then measure the time to get an object from a hierarchy of objects. 
 
-The results show that SWIG is generally faster, except when using smart pointers. However, pybind11's ease of use and maintainability outweigh the slight performance advantage of SWIG.
 
 \input{figures/swig_pybind.tex}
 \input{figures/swig_pybind_o3.tex}
 \input{figures/swig_pybind_sp.tex}
 
+The results show that SWIG is generally faster, except when using smart pointers. However, with our defined requirements, that not only involve performance we decide to go with pybind11.
+
 
 \subsection{Technology Decision: pybind11 for Optimal Integration}
 
-The selection of pybind11 as the primary technology for creating Python bindings for the sys\_sage library stems from a comprehensive evaluation of various options, balancing performance, maintainability, and ease of use. While performance benchmarks indicated that SWIG might offer a slight speed advantage in certain scenarios, particularly with standard data structures, the crucial consideration of developer experience and long-term maintainability tipped the scales in favor of pybind11.
+The selection of pybind11 as the primary technology for creating Python bindings for the sys-sage library stems from a comprehensive evaluation of various options, balancing performance, maintainability, and ease of use. While performance benchmarks indicated that SWIG might offer a slight speed advantage in certain scenarios, particularly with standard data structures, the crucial consideration of developer experience and long-term maintainability tipped the scales in favor of pybind11.
 
 A significant drawback of SWIG is its reliance on a unique interface definition language. This necessitates that developers learn a new syntax, distinct from both C++ and Python, which can impede development speed and increase the learning curve for new contributors. In contrast, pybind11, being a header-only library embedded within C++, offers a more intuitive and familiar development environment for C++ programmers. This direct integration with C++ simplifies the process of creating and maintaining bindings, making it easier for future developers to understand and extend the project.
 
-This decision aligns with findings from independent benchmarks, such as those presented in the \autoref{chapter:Related Work}, which highlight pybind11's superior usability despite potential performance trade-offs. The ease of integration and the reduced cognitive load for developers translate to faster development cycles and improved maintainability—critical factors for the long-term success of the sys\_sage library's Python interface.
+This decision aligns with findings from independent benchmarks, such as those presented in the \autoref{chapter:Related Work}, which highlight pybind11's superior usability despite potential performance trade-offs. The ease of integration and the reduced cognitive load for developers translate to faster development cycles and improved maintainability—critical factors for the long-term success of the sys-sage library's Python interface.
 
-Furthermore, pybind11's robust support for C++ features, including \ac{STL} containers and inheritance, aligns perfectly with the sys\_sage library's complexity. Its ability to seamlessly handle these features simplifies the wrapping process and ensures that the Python interface accurately reflects the C++ library's functionality. This comprehensive feature support, combined with its ease of use, makes pybind11 the optimal choice for creating a maintainable and extensible Python interface for the sys\_sage library.
+Furthermore, pybind11's robust support for C++ features, including \ac{STL} containers and inheritance, aligns perfectly with the sys-sage library's complexity. Its ability to seamlessly handle these features simplifies the wrapping process and ensures that the Python interface accurately reflects the C++ library's functionality. This comprehensive feature support, combined with its ease of use, makes pybind11 the optimal choice for creating a maintainable and extensible Python interface for the sys-sage library.

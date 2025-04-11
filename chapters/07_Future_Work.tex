@@ -22,7 +22,7 @@ In this work we restricted the user-defined functions to only parse attributes, 
 
 This thesis explored various technologies for integrating C++ with Python, with a particular focus on SWIG and Pybind11. While both technologies offer viable solutions, Pybind11 emerged as the preferred choice due to its superior documentation, steeper learning curve, and comprehensive feature set.
 
-A significant enhancement implemented in this project is the addition of XML import functionality. This feature allows users to import XML data in both the C++ and Python versions of the application. Furthermore, users can define custom parsing functions within the Sys-Sage framework, providing flexibility and control over the data ingestion process. This functionality represents a substantial improvement in the application's data handling capabilities.
+A significant enhancement implemented in this project is the addition of XML import functionality. This feature allows users to import XML data in both the C++ and Python versions of the application. Furthermore, users can define custom parsing functions for attributes, providing flexibility and control over the data ingestion process. This functionality represents a substantial improvement in the application's data handling capabilities.
 
 Despite exhibiting a slight performance overhead, Pybind11 provides a user experience that closely resembles native C++ development. The performance considerations, particularly regarding data access, highlight the importance of careful design and implementation. For larger projects, the integration of system-level functionality may present challenges. However, for rapid prototyping and testing, Pybind11 proves to be an invaluable tool.
 

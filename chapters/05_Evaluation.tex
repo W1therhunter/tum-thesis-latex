@@ -1,9 +1,21 @@
 \chapter{Evaluation}\label{chapter:Evaluation}
+
+The following evaluation chapter assesses the usability and performance of the developed Python interface for \texttt{sys-sage} against its C++ counterpart. It also examines the integration of the new XML import feature. Through benchmarks and qualitative analysis, we quantify the performance impact of the Python bindings and discuss the trade-offs between user-friendliness and efficiency. The evaluation mainly focuses on the Python implementation without the modifications to the destructors of the base implementation, therefore we discuss the strengths and weaknesses of the solution with the mentioned modifications.
+
 \section{Requirement Analysis and Performance Evaluation}
-First we want to revisit the requirements of the Python implementation of Sys-Sage, which are described in \autoref{chapter:Approach}, followed by a performance evaluation of the Python and C++ implementations.
+First we want to revisit the requirements of the Python implementation of sys-sage, which are described in \autoref{chapter:Approach}, followed by a performance evaluation of the Python and C++ implementations.
 \subsection{Library Complexity and Dependencies}
 
-The Python solution mirrors the C++ implementation, encompassing nearly all functionalities. The only current limitation is the handling of overloaded functions that accept a list of components as arguments. Attributes can be stored as Python attributes, and both import and export functionalities are available, with optional support for custom Python functions to parse the attributes. The basic setup, excluding optional dependencies like \texttt{intel\_pqos} and \texttt{nvidia\_mig}, requires only two dependencies: Python and Pybind11.
+The Python solution mirrors the C++ implementation, encompassing nearly all functionalities. The only current limitation is the handling of overloaded methods, that accept a list of components as arguments. In that case the user must use the alternative method. 
+\begin{lstlisting}[language=Python, xleftmargin=4em, frame = single]
+    c.GetAllChildrenByType(children_list, type) # this won't work
+    # do this instead 
+    children_list += c.GetAllChildrenByType(type)
+    \end{lstlisting}
+
+Attributes can be stored as Python attributes, and both import and export functionalities are available, with optional support for custom Python functions to parse the attributes. One limitation is that currently the user has no control over default attributes when exporting to XML. 
+
+The basic setup, excluding optional dependencies like \texttt{intel\_pqos} and \texttt{nvidia\_mig}, requires only two dependencies: Python and pybind11
 
 \subsection{Error Handling and Documentation}
 
@@ -11,7 +23,7 @@ Simple error messages have been integrated, but there is room for improvement in
 
 \subsection{Future Support and Build/Installation}
 
-Pybind11 is a well-established tool for creating bindings, supported by an active community and ongoing maintenance. CMAKE support allows users to build either the Python or C++ version of Sys-Sage, providing flexibility in deployment.
+Pybind11 is a well-established tool for creating bindings, supported by an active community and ongoing maintenance. CMAKE support allows users to build either the Python or C++ version of sys-sage, providing flexibility in deployment.
 
 \subsection{User Experience}
 

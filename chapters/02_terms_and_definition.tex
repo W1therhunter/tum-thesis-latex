@@ -1,46 +1,56 @@
 \chapter{Terms and Definitions}\label{chapter:terms_and_definition}
 
-\section{Sys-Sage Specific Terms}
+\section{sys-sage Specific Terms}
 
-To understand how \texttt{Sys-Sage} operates, it is essential to define its core concepts. \texttt{Sys-Sage} is designed with a modular structure, allowing for high adaptability through various compilation options that enable different functionalities. The system is primarily composed of components, data paths and their attributes, along with parsers and external interfaces, each serving a distinct role in modeling and analyzing complex hardware architectures.
+To understand how \texttt{sys-sage} operates, it is essential to define its core concepts. \texttt{sys-sage} is designed with a modular structure, allowing for high adaptability through various compilation options that enable different functionalities. The system is primarily composed of components, data paths and their attributes, along with parsers and external interfaces, each serving a distinct role in modeling and analyzing complex hardware architectures.
 
 \subsection{Components }
 
-At the heart of \texttt{Sys-Sage} lies the concept of components, which represent various elements of a high-performance computing (\ac{HPC}) system. The most fundamental component is simply referred to as \texttt{Component}, a generic type that serves as the base class for all other component types. Every component inherits essential attributes such as \texttt{name}, \texttt{id}, and \texttt{type}, ensuring consistency across the system. \cite[see Component]{sys-sage-docu}
+At the heart of \texttt{sys-sage} lies the concept of components, which represent various elements of a high-performance computing (\ac{HPC}) system. The most fundamental component is simply referred to as \texttt{Component}, a generic type that serves as the base class for all other component types. Every component inherits essential attributes such as \texttt{name}, \texttt{id}, and \texttt{type}, ensuring consistency across the system. \cite[see Component]{sys-sage-docu}
 
-A key component type is \texttt{Topology}, which defines the root of an \ac{HPC} system. However, \texttt{Sys-Sage} allows any component to act as the root, offering flexibility in system representation. The \texttt{Node} component represents a computing node within an \ac{HPC} system and provides specific functions such as \texttt{RefreshCpuCoreFrequency()}, if \texttt{Proc\_Cpu} is enabled. This functions dynamically updates CPU frequencies. If the \texttt{Intel\_Pqos} extension is enabled, an additional function, \texttt{UpdateL3CATCoreCOS()}, becomes available, offering more control over cache allocation. \cite[see Topology, Node]{sys-sage-docu}
+A key component type is \texttt{Topology}, which defines the root of an \ac{HPC} system. However, \texttt{sys-sage} allows any component to act as the root, offering flexibility in system representation. The \texttt{Node} component represents a computing node within an \ac{HPC} system and provides specific functions such as \texttt{RefreshCpuCoreFrequency()}, if \texttt{Proc\_Cpu} is enabled. This functions dynamically updates CPU frequencies. If the \texttt{Intel\_Pqos} extension is enabled, an additional function, \texttt{UpdateL3CATCoreCOS()}, becomes available, offering more control over cache allocation. \cite[see Topology, Node]{sys-sage-docu}
 
 Memory is another crucial component in the system, represented by the \texttt{Memory} class. This component models various types of memory, with attributes such as \texttt{size}, which can be adjusted, and \texttt{volatility}, which remains static. For systems incorporating \texttt{NVIDIA MIG} technology, the memory component can retrieve the \texttt{MIGSize} of a \ac{GPU} memory partition. \cite[see Memory]{sys-sage-docu}
 
 Similarly, the \texttt{Chip} component represents any type of processing unit, including CPUs, GPUs, and accelerators. It includes attributes such as \texttt{vendor}, \texttt{model}, and \texttt{chip-type}. When \texttt{NVIDIA MIG} is enabled, additional functionalities such as \texttt{UpdateMIGSettings()}, \texttt{GetMIGNumSMs()}, and \texttt{GetMIGNumCores()} provide extended configurability. \cite[see Chip]{sys-sage-docu}
 
-To allow for hierarchical organization, \texttt{Sys-Sage} introduces the \texttt{Subdivision} component, which enables user-defined groupings within the system. A specialized subclass of \texttt{Subdivision} is \texttt{NUMA} (Non-Uniform Memory Access), which models memory locality and allows for adjustable memory sizes. \cite[see Subdivision, NUMA]{sys-sage-docu}  
+To allow for hierarchical organization, \texttt{sys-sage} introduces the \texttt{Subdivision} component, which enables user-defined groupings within the system. A specialized subclass of \texttt{Subdivision} is \texttt{NUMA} (Non-Uniform Memory Access), which models memory locality and allows for adjustable memory sizes. \cite[see Subdivision, NUMA]{sys-sage-docu}  
 
 Another critical component is the \texttt{Cache}, which represents cache memory within a system. It allows users to specify cache level, associativity ways, and cache-line size, determining how memory addresses map to cache lines. If \texttt{NVIDIA MIG} is enabled, the function \texttt{GetMIGSize()} becomes available, providing additional insights into GPU memory partitioning. \cite[see Cache]{sys-sage-docu}
 
 At the processing level, the \texttt{Core} component models individual cores in CPUs or GPU streaming multiprocessors, with frequency attributes that can be both retrieved and modified. In addition, the \texttt{Thread} component represents hardware threads rather than software threads. While it also has a frequency attribute, this can only be read, not modified. If the \texttt{Intel\_Pqos} extension is enabled, the function \texttt{GetCATAwareL3Size()} provides additional cache-related information. \cite[see Core, Thread]{sys-sage-docu}
 
+Ther are not only child-parent relationships. \texttt{Sys-sage} also supports datapaths to connect arbitrary components.
+
 \subsection{Datapaths}
 
-In addition to components, \texttt{Sys-Sage} models interconnections within an \ac{HPC} system using data paths. A data path defines a link between two arbitrary components, with each path having a well-defined source and target. While each component can have multiple data paths, individual data paths are unidirectional by default. However, bidirectional data paths can also be modeled, in which case they are stored twice — once as source and once as target. \cite[see Data Path]{sys-sage-docu}
+In addition to components, \texttt{sys-sage} models interconnections within an \ac{HPC} system using datapaths. A datapath defines a link between two components, with each path having a well-defined source and target. While each component can have multiple data paths, individual data paths are unidirectional by default. However, bidirectional data paths can also be modeled, in which case they are stored twice — once as source and once as target. \cite[see Data Path]{sys-sage-docu}
 
 Two primary attributes define data paths: \texttt{latency} and \texttt{bandwidth}, which are included by default. However, additional attributes can be incorporated depending on the specific use case, including parameters related to data transfer efficiency, system performance, and power consumption. These attributes allow data paths to accurately represent dynamic system behavior and adapt to changing configurations.\cite[see Data Path]{sys-sage-docu}
 
+Datapaths share the same mechanism for additional attributes as Components, where the user has the option to add custom attributes.
+
 \subsection{Attributes}
 
-Both \texttt{Component} and \texttt{Datapath} classes contain a set of predefined attributes such as \texttt{id}, \texttt{name}, \texttt{orientation}, and \texttt{bandwidth}. However, \texttt{Sys-Sage} also allows users to define custom attributes through a flexible key-value mapping system. This feature enables components to store additional metadata, such as frequency history, while data paths can incorporate attributes related to power consumption or other performance characteristics.\cite[see Component, Datapath]{sys-sage-docu}
+Both \texttt{Component} and \texttt{Datapath} classes contain a set of predefined attributes such as \texttt{id} and \texttt{name} or \texttt{orientation} and \texttt{bandwidth} respectively. However, \texttt{sys-sage} also allows users to define custom attributes through a flexible key-value mapping system. This feature enables components to store additional metadata, such as frequency history, while data paths can incorporate attributes related to power consumption or other performance characteristics.\cite[see Component, Datapath]{sys-sage-docu}
+
+Now that we showed the essential parts to build a system topology, we will take a closer look at parsers and external interfaces, that help to build and feed the internal representation with data.
 
 \subsection{Parsers}
 
-To facilitate system analysis, \texttt{Sys-Sage} provides various parsers that allow the integration of external data sources. Supported parsers include \texttt{Caps\_Numa\_Benchmark}, \texttt{cccbench}, \texttt{hwloc}, and \texttt{mt4g}. These parsers enable the system to read relevant data and construct an internal representation of the hardware topology, making \texttt{Sys-Sage} a powerful tool for performance analysis and resource management.\cite[see Data Parsers Documentation]{sys-sage-docu}
+To facilitate system analysis, \texttt{sys-sage} provides various parsers that allow the integration of external data sources. Supported parsers include \texttt{Caps\_Numa\_Benchmark}, \texttt{cccbench}, \texttt{hwloc}, and \texttt{mt4g}. These parsers enable the system to read relevant data and construct an internal representation of the hardware topology, making \texttt{sys-sage} a powerful tool for performance analysis and resource management.\cite[see Data Parsers Documentation]{sys-sage-docu}
+
+Parsers play a important role in static analysis, but to make \texttt{sys-sage} dynamic, the user can also integrate external interfaces.
 
 \subsection{External Interfaces}
 
-Some functions mentioned depend on external interfaces. These interfaces include \texttt{Intel\_Pqos}, \texttt{NVIDIA\_MIG}, and \texttt{Proc\_Cpuinfo}. They allow \texttt{Sys-Sage} to dynamically collect and analyze hardware performance data. However these interfaces are only available for systems, that have access to these technologies.\cite{sys-sage-docu}
+As menitioned in the Components section, some functions depend on external interfaces. These interfaces include \texttt{Intel\_Pqos}, \texttt{NVIDIA\_MIG}, and \texttt{Proc\_Cpuinfo}. They allow \texttt{sys-sage} to dynamically collect and analyze hardware performance data. However these interfaces are only available for systems, that have access to these technologies.\cite{sys-sage-docu}
+
+We now have a overview of \texttt{sys-sage} and what role each of the main parts play. In order to grasp the potential challenges for binding the \texttt{sys-sage} library to Python, we will discuss the key differences between C++ and Python.
 
 \section{Differences Between C++ and Python}
 
-While \texttt{Sys-Sage} is implemented in C++, Python has emerged as one of the most popular programming languages, surpassing JavaScript with 16.925\% of all GitHub projects being coded in Python. Given its popularity, integrating Python support into \texttt{Sys-Sage} offers significant advantages in terms of usability and accessibility. \cite{languages-github-stats}
+While \texttt{sys-sage} is implemented in C++, Python has emerged as one of the most popular programming languages, surpassing JavaScript with 16.925\% of all GitHub projects being coded in Python. Given its popularity, integrating Python support into \texttt{sys-sage} offers significant advantages in terms of usability and accessibility. \cite{languages-github-stats}
 
 One of the most notable differences between C++ and Python is performance. C++ is a compiled language, meaning that code is translated directly into machine instructions before execution. In contrast, Python relies on an interpreter, which translates code at runtime. This additional translation step significantly slows down execution speed, with C++ often performing up to 100 times faster than Python. While there are approaches to mitigate Python's performance limitations — such as using the \texttt{Numba} compiler\parencite{numba} — these methods impose restrictions on the language’s features and usability.\cite{languages-performance}
 
