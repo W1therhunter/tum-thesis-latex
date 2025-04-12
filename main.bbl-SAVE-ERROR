@@ -364,6 +364,35 @@
       \field{year}{2025}
       \field{dateera}{ce}
     \endentry
+    \entry{python-timeit-docu}{manual}{}{}
+      \name{author}{1}{}{%
+        {{un=0,uniquepart=base,hash=9688a568902e4b07b60557b566bdd820}{%
+           family={Foundation},
+           familyi={F\bibinitperiod},
+           given={Python\bibnamedelima Software},
+           giveni={P\bibinitperiod\bibinitdelim S\bibinitperiod},
+           givenun=0}}%
+      }
+      \strng{namehash}{9688a568902e4b07b60557b566bdd820}
+      \strng{fullhash}{9688a568902e4b07b60557b566bdd820}
+      \strng{fullhashraw}{9688a568902e4b07b60557b566bdd820}
+      \strng{bibnamehash}{9688a568902e4b07b60557b566bdd820}
+      \strng{authorbibnamehash}{9688a568902e4b07b60557b566bdd820}
+      \strng{authornamehash}{9688a568902e4b07b60557b566bdd820}
+      \strng{authorfullhash}{9688a568902e4b07b60557b566bdd820}
+      \strng{authorfullhashraw}{9688a568902e4b07b60557b566bdd820}
+      \field{extraname}{5}
+      \field{sortinit}{F}
+      \field{sortinithash}{2638baaa20439f1b5a8f80c6c08a13b4}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{day}{11}
+      \field{howpublished}{\url{https://docs.python.org/3/library/timeit.html}}
+      \field{month}{4}
+      \field{title}{timeit --- Measure execution time of small code snippets}
+      \field{year}{2025}
+      \field{dateera}{ce}
+    \endentry
     \entry{numba}{article}{}{}
       \name{author}{2}{}{%
         {{un=0,uniquepart=base,hash=c5304d4d3b616054451f1a8db2a3974f}{%
@@ -395,6 +424,32 @@
       \field{title}{Comparing python, go, and C++ on the n-queens problem}
       \field{year}{2020}
     \endentry
+    \entry{pybind11-issue-327}{misc}{}{}
+      \name{author}{1}{}{%
+        {{un=0,uniquepart=base,hash=5f630e56bb6a31ced5d442a3b40cc68d}{%
+           family={Jakob},
+           familyi={J\bibinitperiod},
+           given={Wenzel},
+           giveni={W\bibinitperiod},
+           givenun=0}}%
+      }
+      \strng{namehash}{5f630e56bb6a31ced5d442a3b40cc68d}
+      \strng{fullhash}{5f630e56bb6a31ced5d442a3b40cc68d}
+      \strng{fullhashraw}{5f630e56bb6a31ced5d442a3b40cc68d}
+      \strng{bibnamehash}{5f630e56bb6a31ced5d442a3b40cc68d}
+      \strng{authorbibnamehash}{5f630e56bb6a31ced5d442a3b40cc68d}
+      \strng{authornamehash}{5f630e56bb6a31ced5d442a3b40cc68d}
+      \strng{authorfullhash}{5f630e56bb6a31ced5d442a3b40cc68d}
+      \strng{authorfullhashraw}{5f630e56bb6a31ced5d442a3b40cc68d}
+      \field{extraname}{1}
+      \field{sortinit}{J}
+      \field{sortinithash}{b2f54a9081ace9966a7cb9413811edb4}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{howpublished}{\url{https://github.com/pybind/pybind11/issues/327}}
+      \field{title}{Overloading \_\_del\_\_ method}
+      \field{year}{2016}
+    \endentry
     \entry{pybind11-docu}{manual}{}{}
       \name{author}{1}{}{%
         {{un=0,uniquepart=base,hash=5f630e56bb6a31ced5d442a3b40cc68d}{%
@@ -412,6 +467,7 @@
       \strng{authornamehash}{5f630e56bb6a31ced5d442a3b40cc68d}
       \strng{authorfullhash}{5f630e56bb6a31ced5d442a3b40cc68d}
       \strng{authorfullhashraw}{5f630e56bb6a31ced5d442a3b40cc68d}
+      \field{extraname}{2}
       \field{sortinit}{J}
       \field{sortinithash}{b2f54a9081ace9966a7cb9413811edb4}
       \field{labelnamesource}{author}

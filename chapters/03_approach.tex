@@ -11,11 +11,11 @@ The sys-sage library, as outlined in the terminology section, exhibits significa
 
 The library also manages horizontal and vertical connections through component parent-child relationships and datapath source-target relationships. The Python implementation must handle all objects with precision, mirroring the execution behavior of the C++ functions. sys-sage employs inheritance, with classes like Topology inheriting from the generic Component class. While Python supports inheritance, the integration of inheritance and polymorphism requires careful consideration to avoid potential workarounds. This aspect will be addressed in this work, particularly concerning the generalization of the Datapaths class to accommodate future specific Datapaths types.
 
-sys-sage supports up to three external interfaces: intel\_pqos, nvidia\_mig, and proc\_cpuinfo. The Python bindings should allow users to utilize these interfaces when available and desired. Additionally, sys-sage provides XML import and export functionality, enabling users to customize attribute import and export processes.
+sys-sage supports up to three external interfaces: \verb|intel_pqos|, \verb|nvidia_mig|, and \verb|proc_cpuinfo|. The Python bindings should allow users to utilize these interfaces when available and desired. Additionally, sys-sage provides XML import and export functionality, enabling users to customize attribute import and export processes.
 
 \subsubsection{Performance}
 
-The most computationally intensive tasks involve searching and updating components within the topology. The time required for these operations increases with the size of the topology. To minimize overhead, the Python bindings should primarily rely on the existing C++ functions, avoiding reimplementation in Python.
+It is well-known, that C++ is more performant than Python. To minimize overhead, the Python bindings should primarily rely on the existing C++ functions, avoiding reimplementation in Python. The chosen tool to create Python bindings should be as efficient as possible to avoid performance bottlenecks and optimize resource usage.
 
 \subsubsection{Library Dependency}
 
@@ -106,11 +106,14 @@ SWIG is a tool capable of generating bindings for numerous programming languages
 
 Other tools, such as Boost.Python and Cffi, offer alternative approaches. Boost.Python, while powerful, introduces complex installation process. Cffi, primarily designed for C, may not fully support the complexities of modern C++ libraries, particularly those utilizing modern C++ features. \cite{boost-docu} \cite{cffi-docu}
 
+\smallskip
 As we can see there are plenty of technologies to integrate C++ in Python, using different approaches. Checking the performance of these tools is our next step to narrow down our choice.
 
 \subsection{Performance Comparison}
 
-Performance is a critical consideration, especially for tasks involving searching and updating components in large topologies. The overhead associated with each technology, including function calls and type casting, must be evaluated. In the following benchmarks we repeat the task a million times and measure the time it takes.
+Performance is a critical consideration, especially for tasks involving searching and updating components in large topologies. The overhead associated with each technology, including function calls and type casting, must be evaluated. 
+
+In the following benchmarks we repeat the task a million times and measure the time it takes.
 
 Initial tests involving file I/O operations indicate that Py-C-API offers the best performance, followed by pybind11 and SWIG. Python and Cython exhibit significantly lower performance due to the interpreter overhead.
 
@@ -118,13 +121,14 @@ Initial tests involving file I/O operations indicate that Py-C-API offers the be
 
 The Python-C-API might be the optimal solution regarding performance, however, the documentation advises to better use a third party tool to simplify the process. \cite{py-c-api}
 
-Therefore we only compare the performance of pybind11 and SWIG. To do this we create a datastructure that mimics sys-sage's internal representation in a very basic way. We then measure the time to get an object from a hierarchy of objects. 
+Therefore in the next step we only compare the performance of pybind11 and SWIG. To do this we create a datastructure that mimics sys-sage's internal representation in a very basic way. We then measure the time to get an object from a hierarchy of objects. 
 
 
 \input{figures/swig_pybind.tex}
 \input{figures/swig_pybind_o3.tex}
 \input{figures/swig_pybind_sp.tex}
 
+\newpage
 The results show that SWIG is generally faster, except when using smart pointers. However, with our defined requirements, that not only involve performance we decide to go with pybind11.
 
 

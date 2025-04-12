@@ -1,5 +1,5 @@
 
-\begin{figure}[htpb]
+\begin{figure}[hptb]
     \centering
   
     \pgfplotstableset{col sep=&, row sep=\\}
@@ -43,7 +43,7 @@
           grid,
           thick,
           ylabel=Time (seconds),
-          xlabel=Input Size
+          xlabel=Hierarchy depth
         ]
         \addplot+[mark=none]table[x=x, y=swig]{\datatable};
         \addlegendentry{SWIG}
